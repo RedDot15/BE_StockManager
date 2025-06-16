@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: BE_StockManager
+  config:
+    import: env.properties
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+aws:
+  dynamodb:
+    endpoint: ${DYNAMODB_URL}
+  region: ${DYNAMODB_REGION}
+  accessKeyId: ${DYNAMODB_ACCESS_KEY}
+  secretKey: ${DYNAMODB_SECRET_KEY}
+
+jwt:
+  signer-key: ${SIGNER_KEY}
+  valid-duration: ${VALID_DURATION} # in second
+  refreshable-duration: ${REFRESHABLE_DURATION} # in seconds
+
+logging:
+  level:
+    root: INFO
+    org.reddot15.be_stockmanager:
+    org.springframework.web: DEBUG
+    software.amazon.awssdk: INFO
