@@ -1,4 +1,4 @@
-package org.reddot15.be_stockmanager.model;
+package org.reddot15.be_stockmanager.entity;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;

@@ -1,4 +1,4 @@
-package org.reddot15.be_stockmanager.config;
+package org.reddot15.be_stockmanager.config.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,8 +1,8 @@
-package org.reddot15.be_stockmanager.model;
+package org.reddot15.be_stockmanager.entity;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.SuperBuilder; // Cần dùng SuperBuilder
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 
@@ -12,6 +12,6 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @DynamoDbBean
-public class Permission extends BaseMasterDataItem {
+public class Vendor extends BaseMasterDataItem {
     String name;
 }

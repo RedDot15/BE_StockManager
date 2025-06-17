@@ -1,4 +1,4 @@
-package org.reddot15.be_stockmanager.config;
+package org.reddot15.be_stockmanager.config.dynamodb;
 
 
 import org.springframework.beans.factory.annotation.Value;

@@ -1,4 +1,4 @@
-package org.reddot15.be_stockmanager.model;
+package org.reddot15.be_stockmanager.entity;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

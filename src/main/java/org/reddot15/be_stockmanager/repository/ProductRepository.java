@@ -1,6 +1,6 @@
 package org.reddot15.be_stockmanager.repository;
 
-import org.reddot15.be_stockmanager.model.Product;
+import org.reddot15.be_stockmanager.entity.Product;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 
@@ -30,8 +30,8 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         deleteByPkAndEntityId("Products", productId);
     }
 
-    public List<Product> findAllProducts() {
-        // Get all Product by Partition Key "Products"
-        return findByPk("Products");
-    }
+//    public List<Product> findAllProducts() {
+//        // Get all Product by Partition Key "Products"
+//        return findByPk("Products");
+//    }
 }

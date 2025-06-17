@@ -1,6 +1,6 @@
 package org.reddot15.be_stockmanager.repository;
 
-import org.reddot15.be_stockmanager.model.Invoice;
+import org.reddot15.be_stockmanager.entity.Invoice;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
@@ -53,8 +53,8 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                 .collect(Collectors.toList());
     }
 
-    public List<Invoice> findAllInvoices() {
-        // Get all Invoices by Partition Key "Invoices"
-        return findByPk("Invoices");
-    }
+//    public List<Invoice> findAllInvoices() {
+//        // Get all Invoices by Partition Key "Invoices"
+//        return findByPk("Invoices");
+//    }
 }
