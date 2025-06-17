@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.reddot15.be_stockmanager.converter.dynamodb.AttributeValueConverter;
 import org.reddot15.be_stockmanager.dto.request.VendorCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.VendorUpdateRequest;
 import org.reddot15.be_stockmanager.dto.response.VendorPaginationResponse;
@@ -16,6 +15,7 @@ import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.VendorMapper;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
+import org.reddot15.be_stockmanager.util.PaginationTokenUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,19 +60,8 @@ public class VendorService {
 		Map<String, AttributeValue> currentExclusiveStartKey = null;
 		boolean hasMore = true;
 
-		// Decode & Assign ExclusiveStartKey if exists
-		if (nextPageToken != null && !nextPageToken.trim().isEmpty()) {
-			try {
-				// 1. Decode base64
-				String decodedString = new String(Base64.getUrlDecoder().decode(nextPageToken));
-				// 2. Deserialize JSON string back to Map<String, String>
-				Map<String, String> stringMap = objectMapper.readValue(decodedString, Map.class);
-				// 3. Convert Map<String,String> -> Map<String,AttributeValue>
-				currentExclusiveStartKey = AttributeValueConverter.convertMapStringToAttributeValue(stringMap);
-			} catch (IOException e) {
-				throw new AppException(ErrorCode.INVALID_PAGINATION_TOKEN);
-			}
-		}
+		// Decode & Assign ExclusiveStartKey if exists using the utility
+		currentExclusiveStartKey = PaginationTokenUtil.decodeNextPageToken(nextPageToken, objectMapper);
 
 		// Loop to aggregate items until limit is met or no more data
 		while (aggregatedVendors.size() < limit && hasMore) {
@@ -98,21 +87,9 @@ public class VendorService {
 				.map(vendorMapper::toResponse)
 				.toList();
 
-		// Encode LastEvaluatedKey if exists
-		String newNextPageToken = null;
-		if (hasMore) {
-			try {
-				// 1. Convert Map<String,AttributeValue> -> Map<String,String>
-				Map<String, String> stringMap = AttributeValueConverter
-						.convertMapAttributeValueToString(currentExclusiveStartKey);
-				// 2. Write as json string
-				String jsonString = objectMapper.writeValueAsString(stringMap);
-				// 3. Base64 encode
-				newNextPageToken = Base64.getUrlEncoder().encodeToString(jsonString.getBytes());
-			} catch (IOException e) {
-				throw new AppException(ErrorCode.SERIALIZE_PAGINATION_TOKEN_FAILED);
-			}
-		}
+		// Encode LastEvaluatedKey if exists using the utility
+		String newNextPageToken = PaginationTokenUtil.encodeLastEvaluatedKey(currentExclusiveStartKey, objectMapper);
+
 		// Return
 		return VendorPaginationResponse.builder()
 				.vendors(vendorResponses)
