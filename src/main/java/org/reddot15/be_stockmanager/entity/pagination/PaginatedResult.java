@@ -1,4 +1,4 @@
-package org.reddot15.be_stockmanager.entity;
+package org.reddot15.be_stockmanager.entity.pagination;
 
 import lombok.Builder;
 import lombok.Getter;

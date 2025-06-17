@@ -1,12 +1,11 @@
 package org.reddot15.be_stockmanager.repository;
 
-import org.reddot15.be_stockmanager.entity.PaginatedResult;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.entity.Vendor;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 

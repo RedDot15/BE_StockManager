@@ -29,6 +29,9 @@ public enum ErrorCode {
     // Vendor
     VENDOR_DUPLICATE(HttpStatus.CONFLICT, 69,"Vendor already exists."),
     VENDOR_NOT_FOUND(HttpStatus.NOT_FOUND, 64,"Vendor not found."),
+    // Product
+    PRODUCT_DUPLICATE(HttpStatus.CONFLICT, 69,"Product already exists."),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, 64,"Product not found."),
     // Pagination
     INVALID_PAGINATION_TOKEN(HttpStatus.BAD_REQUEST, 60, "Invalid pagination token."),
     SERIALIZE_PAGINATION_TOKEN_FAILED(HttpStatus.BAD_REQUEST, 70, "Serialize pagination token failed.")

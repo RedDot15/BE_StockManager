@@ -7,9 +7,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.reddot15.be_stockmanager.dto.request.VendorCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.VendorUpdateRequest;
-import org.reddot15.be_stockmanager.dto.response.VendorPaginationResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
 import org.reddot15.be_stockmanager.dto.response.VendorResponse;
-import org.reddot15.be_stockmanager.entity.PaginatedResult;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.entity.Vendor;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
@@ -21,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -49,7 +47,7 @@ public class VendorService {
 	}
 
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
-	public VendorPaginationResponse getAll(Integer limit, String nextPageToken) {
+	public PageResponse<VendorResponse> getAll(Integer limit, String nextPageToken) {
 		// Default limit if not provided
 		if (limit == null || limit <= 0) {
 			limit = 10;
@@ -91,8 +89,8 @@ public class VendorService {
 		String newNextPageToken = PaginationTokenUtil.encodeLastEvaluatedKey(currentExclusiveStartKey, objectMapper);
 
 		// Return
-		return VendorPaginationResponse.builder()
-				.vendors(vendorResponses)
+		return PageResponse.<VendorResponse>builder()
+				.items(vendorResponses)
 				.nextPageToken(newNextPageToken)
 				.hasMore(hasMore)
 				.build();
@@ -112,8 +110,8 @@ public class VendorService {
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
 	public String delete(String vendorId) {
 		// Check exists
-		Vendor entity = vendorRepository.findVendorById(vendorId)
-				.orElseThrow(() -> new AppException(ErrorCode.VENDOR_NOT_FOUND));
+		if (vendorRepository.findVendorById(vendorId).isEmpty())
+			throw new AppException(ErrorCode.VENDOR_NOT_FOUND);
 		// Delete
 		vendorRepository.deleteVendorById(vendorId);
 		// Return ID

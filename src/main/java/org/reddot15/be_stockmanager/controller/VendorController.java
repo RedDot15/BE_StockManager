@@ -35,11 +35,11 @@ public class VendorController {
 
 	@PutMapping(value = "/{vendorId}")
 	public ResponseEntity<ResponseObject> update(@PathVariable String vendorId, @Valid @RequestBody VendorUpdateRequest request) {
-		return buildResponse(HttpStatus.OK, "Create new vendor successfully.", vendorService.update(vendorId, request));
+		return buildResponse(HttpStatus.OK, "Update vendor successfully.", vendorService.update(vendorId, request));
 	}
 
 	@DeleteMapping(value = "/{vendorId}")
 	public ResponseEntity<ResponseObject> delete(@PathVariable String vendorId) {
-		return buildResponse(HttpStatus.OK, "Delete new vendor successfully.", vendorService.delete(vendorId));
+		return buildResponse(HttpStatus.OK, "Delete vendor successfully.", vendorService.delete(vendorId));
 	}
 }

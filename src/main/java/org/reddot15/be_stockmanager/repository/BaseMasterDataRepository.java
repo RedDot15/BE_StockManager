@@ -1,7 +1,7 @@
 package org.reddot15.be_stockmanager.repository;
 
 import org.reddot15.be_stockmanager.entity.BaseMasterDataItem;
-import org.reddot15.be_stockmanager.entity.PaginatedResult;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
