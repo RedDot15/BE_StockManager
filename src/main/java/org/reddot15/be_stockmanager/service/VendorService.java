@@ -22,10 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.io.IOException;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -36,7 +33,8 @@ import java.util.stream.Collectors;
 public class VendorService {
 	VendorRepository vendorRepository;
 	VendorMapper vendorMapper;
-	private final ObjectMapper objectMapper;
+	ObjectMapper objectMapper;
+
 
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
 	public VendorResponse create(VendorCreateRequest request) {
@@ -56,12 +54,13 @@ public class VendorService {
 		if (limit == null || limit <= 0) {
 			limit = 10;
 		}
-		// Max limit: Prevent clients from requesting too many items
-		if (limit > 50) {
-			limit = 50;
-		}
+
+		// Initialize variables for aggregation
+		List<Vendor> aggregatedVendors = new ArrayList<>();
+		Map<String, AttributeValue> currentExclusiveStartKey = null;
+		boolean hasMore = true;
+
 		// Decode & Assign ExclusiveStartKey if exists
-		Map<String, AttributeValue> exclusiveStartKey = null;
 		if (nextPageToken != null && !nextPageToken.trim().isEmpty()) {
 			try {
 				// 1. Decode base64
@@ -69,32 +68,47 @@ public class VendorService {
 				// 2. Deserialize JSON string back to Map<String, String>
 				Map<String, String> stringMap = objectMapper.readValue(decodedString, Map.class);
 				// 3. Convert Map<String,String> -> Map<String,AttributeValue>
-				exclusiveStartKey = AttributeValueConverter.convertMapStringToAttributeValue(stringMap);
+				currentExclusiveStartKey = AttributeValueConverter.convertMapStringToAttributeValue(stringMap);
 			} catch (IOException e) {
 				throw new AppException(ErrorCode.INVALID_PAGINATION_TOKEN);
 			}
 		}
 
-		// Find all paginated vendors
-		PaginatedResult<Vendor> paginatedResult = vendorRepository.findAllVendors(limit, exclusiveStartKey);
-		// Get items
-		List<VendorResponse> vendorResponses = paginatedResult.getItems().stream()
+		// Loop to aggregate items until limit is met or no more data
+		while (aggregatedVendors.size() < limit && hasMore) {
+			// Determine the limit for the *current* internal DynamoDB query
+			int ddbQueryLimit = limit - aggregatedVendors.size();
+			// Cap ddbQueryLimit to DynamoDB's max internal limit
+			if (ddbQueryLimit > 100) {
+				ddbQueryLimit = 100;
+			}
+
+			// Query
+			PaginatedResult<Vendor> pageResult = vendorRepository.findAllVendors(ddbQueryLimit, currentExclusiveStartKey);
+
+			// Add all
+			aggregatedVendors.addAll(pageResult.getItems());
+			// Update for next iteration
+			currentExclusiveStartKey = pageResult.getLastEvaluatedKey();
+			hasMore = currentExclusiveStartKey != null && !currentExclusiveStartKey.isEmpty();
+		}
+
+		// Mapping to response
+		List<VendorResponse> vendorResponses = aggregatedVendors.stream()
 				.map(vendorMapper::toResponse)
 				.toList();
 
 		// Encode LastEvaluatedKey if exists
 		String newNextPageToken = null;
-		boolean hasMore = false;
-		if (paginatedResult.getLastEvaluatedKey() != null && !paginatedResult.getLastEvaluatedKey().isEmpty()) {
+		if (hasMore) {
 			try {
 				// 1. Convert Map<String,AttributeValue> -> Map<String,String>
 				Map<String, String> stringMap = AttributeValueConverter
-						.convertMapAttributeValueToString(paginatedResult.getLastEvaluatedKey());
+						.convertMapAttributeValueToString(currentExclusiveStartKey);
 				// 2. Write as json string
 				String jsonString = objectMapper.writeValueAsString(stringMap);
 				// 3. Base64 encode
 				newNextPageToken = Base64.getUrlEncoder().encodeToString(jsonString.getBytes());
-				hasMore = true;
 			} catch (IOException e) {
 				throw new AppException(ErrorCode.SERIALIZE_PAGINATION_TOKEN_FAILED);
 			}
