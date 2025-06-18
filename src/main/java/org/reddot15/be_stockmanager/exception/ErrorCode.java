@@ -34,7 +34,12 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, 64,"Product not found."),
     // Pagination
     INVALID_PAGINATION_TOKEN(HttpStatus.BAD_REQUEST, 60, "Invalid pagination token."),
-    SERIALIZE_PAGINATION_TOKEN_FAILED(HttpStatus.BAD_REQUEST, 70, "Serialize pagination token failed.")
+    SERIALIZE_PAGINATION_TOKEN_FAILED(HttpStatus.BAD_REQUEST, 70, "Serialize pagination token failed."),
+    // File
+    EMPTY_FILE(HttpStatus.BAD_REQUEST, 60, "Empty file."),
+    FILE_PARSE_FAILED(HttpStatus.BAD_REQUEST, 60, "File parse failed."),
+    // Record
+    INVALID_RECORD(HttpStatus.BAD_REQUEST, 60, "Invalid record.")
     ;
 
     HttpStatus httpStatus;

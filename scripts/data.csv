@@ -24,13 +24,3 @@ Roles,ROLE002,STAFF,,,,,,,,,,,"[""PERM003""]",,,,,
 Permissions,PERM001,MANAGE_DATA,,,,,,,,,,,,,,,,
 Permissions,PERM002,VIEW_FINANCIAL_STATISTIC,,,,,,,,,,,,,,,,
 Permissions,PERM003,IMPORT_INVOICES,,,,,,,,,,,,,,,,
-Invoices,INV001,Order 001,,,,,,,,,,,,2025-06-14T10:00:00Z,2025-06-14T10:00:00Z,1844.4,164.4,"[{""product_id"":""PROD001"",""vendor_id"":""VEN001"",""amount"":1,""price"":1500.0,""vat"":0.1},{""product_id"":""PROD003"",""vendor_id"":""VEN002"",""amount"":10,""price"":18.0,""vat"":0.08}]"
-Invoices,INV002,Order 002,,,,,,,,,,,,2025-06-14T11:00:00Z,2025-06-14T11:00:00Z,1164.8,104.8,"[{""product_id"":""PROD002"",""vendor_id"":""VEN001"",""amount"":1,""price"":1000.0,""vat"":0.1},{""product_id"":""PROD005"",""vendor_id"":""VEN003"",""amount"":5,""price"":12.0,""vat"":0.08}]"
-Invoices,INV003,Order 003,,,,,,,,,,,,2025-06-13T15:30:00Z,2025-06-13T15:30:00Z,495,45,"[{""product_id"":""PROD007"",""vendor_id"":""VEN004"",""amount"":10,""price"":45.0,""vat"":0.1}]"
-Invoices,INV004,Order 004,,,,,,,,,,,,2025-06-12T09:00:00Z,2025-06-12T09:00:00Z,1178,98,"[{""product_id"":""PROD009"",""vendor_id"":""VEN005"",""amount"":2,""price"":450.0,""vat"":0.1},{""product_id"":""PROD010"",""vendor_id"":""VEN005"",""amount"":1,""price"":180.0,""vat"":0.08}]"
-Invoices,INV005,Order 005,,,,,,,,,,,,2025-06-11T14:45:00Z,2025-06-11T14:45:00Z,99,9,"[{""product_id"":""PROD008"",""vendor_id"":""VEN004"",""amount"":1,""price"":90.0,""vat"":0.1}]"
-Invoices,INV006,Order 006,,,,,,,,,,,,2025-05-20T11:00:00Z,2025-05-20T11:00:00Z,209,99,"[{""product_id"":""PROD006"",""vendor_id"":""VEN003"",""amount"":5,""price"":22.0,""vat"":0.9}]"
-Invoices,INV007,Order 007,,,,,,,,,,,,2025-05-21T13:00:00Z,2025-05-21T13:00:00Z,1650,150,"[{""product_id"":""PROD001"",""vendor_id"":""VEN001"",""amount"":1,""price"":1500.0,""vat"":0.1}]"
-Invoices,INV008,Order 008,,,,,,,,,,,,2025-05-22T10:15:00Z,2025-05-22T10:15:00Z,2524,224,"[{""product_id"":""PROD002"",""vendor_id"":""VEN001"",""amount"":2,""price"":1000.0,""vat"":0.1},{""product_id"":""PROD004"",""vendor_id"":""VEN002"",""amount"":4,""price"":75.0,""vat"":0.08}]"
-Invoices,INV009,Order 009,,,,,,,,,,,,2025-04-10T08:00:00Z,2025-04-10T08:00:00Z,64.8,4.8,"[{""product_id"":""PROD005"",""vendor_id"":""VEN003"",""amount"":5,""price"":12.0,""vat"":0.08}]"
-Invoices,INV010,Order 010,,,,,,,,,,,,2025-04-11T16:00:00Z,2025-04-11T16:00:00Z,388.8,28.8,"[{""product_id"":""PROD010"",""vendor_id"":""VEN005"",""amount"":2,""price"":180.0,""vat"":0.08}]"

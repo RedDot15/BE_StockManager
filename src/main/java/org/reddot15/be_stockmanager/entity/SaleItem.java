@@ -1,5 +1,7 @@
 package org.reddot15.be_stockmanager.entity;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
@@ -11,7 +13,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-@DynamoDbBean 
+@DynamoDbBean
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class SaleItem {
     String productId;
     String vendorId;
