@@ -18,6 +18,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 public class SaleItem {
     String productId;
     String vendorId;
+    String categoryName;
     Double amount;
     Double price;
     Double vat;

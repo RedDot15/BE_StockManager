@@ -10,16 +10,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
+import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
+import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.entity.SaleItem;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
+import org.reddot15.be_stockmanager.mapper.InvoiceMapper;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.util.DateTimeValidator;
+import org.reddot15.be_stockmanager.util.PaginationTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,6 +36,7 @@ import java.io.InputStreamReader;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -37,7 +47,9 @@ import java.util.UUID;
 public class InvoiceService {
     InvoiceRepository invoiceRepository;
     ObjectMapper objectMapper;
+    InvoiceMapper invoiceMapper;
 
+    @PreAuthorize("hasAuthority('MANAGE_INVOICES')")
     public List<Invoice> importInvoicesFromCSV(MultipartFile file) {
         // File empty exception
         if (file.isEmpty()) {
@@ -82,6 +94,29 @@ public class InvoiceService {
         }
 
         return importedInvoices;
+    }
+
+    @PreAuthorize("hasAuthority('MANAGE_DATA')")
+    public PageResponse<InvoiceResponse> getAll(Integer limit, String nextPageToken) {
+        // Business logic or defaulting of limit remains here
+        if (limit == null || limit <= 0) {
+            limit = 10;
+        }
+
+        // Get invoices
+        PageResponse<Invoice> invoicePage = invoiceRepository.findAllInvoices(limit, nextPageToken);
+
+        // Map the entities from the repository to DTOs for the API response
+        List<InvoiceResponse> invoiceResponses = invoicePage.getItems().stream()
+                .map(invoiceMapper::toResponse)
+                .toList();
+
+        // Return the paginated response with DTOs
+        return PageResponse.<InvoiceResponse>builder()
+                .items(invoiceResponses)
+                .nextPageToken(invoicePage.getNextPageToken()) // Get the token from the repository's result
+                .hasMore(invoicePage.isHasMore())             // Get the hasMore flag from the repository's result
+                .build();
     }
 
     private List<SaleItem> parseSaleItemsJson(String salesJsonString) throws JsonProcessingException {

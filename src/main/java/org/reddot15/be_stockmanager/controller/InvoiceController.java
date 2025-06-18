@@ -29,4 +29,11 @@ public class InvoiceController {
                 "CSV file uploaded and " + importedInvoices.size() + " invoices imported successfully.",
                 importedInvoices);
     }
+
+    @GetMapping(value = "")
+    public ResponseEntity<ResponseObject> getAll(
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
+        return buildResponse(HttpStatus.OK, "Get invoices successfully.", invoiceService.getAll(limit, nextPageToken));
+    }
 }

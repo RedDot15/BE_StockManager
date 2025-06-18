@@ -1,19 +1,24 @@
 package org.reddot15.be_stockmanager.repository;
 
-import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
 import org.reddot15.be_stockmanager.entity.Vendor;
+import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.util.Map;
 import java.util.Optional;
 
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Repository
 public class VendorRepository extends BaseMasterDataRepository<Vendor> {
+    ObjectMapper objectMapper;
 
-    public VendorRepository(DynamoDbEnhancedClient enhancedClient) {
+    public VendorRepository(DynamoDbEnhancedClient enhancedClient, ObjectMapper objectMapper) {
         super(enhancedClient, Vendor.class);
+        this.objectMapper = objectMapper;
     }
 
     public Vendor saveVendor(Vendor vendor) {
@@ -22,9 +27,16 @@ public class VendorRepository extends BaseMasterDataRepository<Vendor> {
         return save(vendor);
     }
 
-    public PaginatedResult<Vendor> findAllVendors(Integer limit, Map<String, AttributeValue> exclusiveStartKey) {
-        // Pass the pagination parameters to the base class method
-        return findByPk("Vendors", limit, exclusiveStartKey);
+    public PageResponse<Vendor> findAllVendors(Integer limit, String encodedNextPageToken) {
+        // Delegate to the generic pagination utility
+        return DynamoDbPaginationUtil.paginate(
+                objectMapper,
+                limit,
+                encodedNextPageToken,
+                // Provide the specific query function for Vendors
+                (ddbQueryLimit, currentExclusiveStartKey) ->
+                        findByPk("Vendors", ddbQueryLimit, currentExclusiveStartKey)
+        );
     }
 
     public Optional<Vendor> findVendorById(String vendorId) {

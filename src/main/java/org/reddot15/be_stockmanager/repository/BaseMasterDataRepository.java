@@ -85,5 +85,4 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
                 .lastEvaluatedKey(pageLastEvaluatedKey)
                 .build();
     }
-
 }
