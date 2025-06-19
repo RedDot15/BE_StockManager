@@ -3,7 +3,7 @@ package org.reddot15.be_stockmanager.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.stereotype.Repository;
@@ -27,7 +27,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         return save(product);
     }
 
-    public PageResponse<Product> findAllProducts(Integer limit, String encodedNextPageToken) {
+    public DDBPageResponse<Product> findAllProducts(Integer limit, String encodedNextPageToken) {
         // Delegate to the generic pagination utility
         return DynamoDbPaginationUtil.paginate(
                 objectMapper,

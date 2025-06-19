@@ -1,7 +1,7 @@
 package org.reddot15.be_stockmanager.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 public class DynamoDbPaginationUtil {
-    public static <T> PageResponse<T> paginate(
+    public static <T> DDBPageResponse<T> paginate(
             ObjectMapper objectMapper,
             Integer limit,
             String encodedNextPageToken,
@@ -61,7 +61,7 @@ public class DynamoDbPaginationUtil {
         }
 
         // Return the final PageResponse
-        return PageResponse.<T>builder()
+        return DDBPageResponse.<T>builder()
                 .items(aggregatedItems)
                 .nextPageToken(newNextPageToken)
                 .hasMore(hasMore)

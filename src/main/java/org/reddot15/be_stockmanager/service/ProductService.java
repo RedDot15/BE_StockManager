@@ -7,7 +7,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
-import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.exception.AppException;
@@ -49,14 +49,14 @@ public class ProductService {
 	}
 
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
-	public PageResponse<ProductResponse> getAll(Integer limit, String nextPageToken) {
+	public DDBPageResponse<ProductResponse> getAll(Integer limit, String nextPageToken) {
 		// Default limit if not provided - This remains in the service as business logic
 		if (limit == null || limit <= 0) {
 			limit = 10;
 		}
 
 		// Delegate the full pagination logic to the repository
-		PageResponse<Product> productPage = productRepository.findAllProducts(limit, nextPageToken);
+		DDBPageResponse<Product> productPage = productRepository.findAllProducts(limit, nextPageToken);
 
 		// Mapping to response DTOs - This remains in the service as presentation logic
 		List<ProductResponse> productResponses = productPage.getItems().stream()
@@ -64,7 +64,7 @@ public class ProductService {
 				.toList();
 
 		// Return the paginated response with DTOs
-		return PageResponse.<ProductResponse>builder()
+		return DDBPageResponse.<ProductResponse>builder()
 				.items(productResponses)
 				.nextPageToken(productPage.getNextPageToken())
 				.hasMore(productPage.isHasMore())

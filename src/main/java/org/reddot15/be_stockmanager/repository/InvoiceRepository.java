@@ -3,21 +3,15 @@ package org.reddot15.be_stockmanager.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
-import org.reddot15.be_stockmanager.entity.Product;
-import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
-import org.reddot15.be_stockmanager.util.PaginationTokenUtil;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -48,17 +42,33 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
     }
 
     public List<Invoice> findInvoicesByCreatedAtBetween(String startDate, String endDate) {
-        // Query LSI
-        QueryConditional queryConditional = QueryConditional.sortBetween(
-                Key.builder()
-                        .partitionValue("Invoices")
-                        .sortValue(startDate)
-                        .build(),
-                Key.builder()
-                        .partitionValue("Invoices")
-                        .sortValue(endDate)
-                        .build()
-        );
+        // Initialize variable
+        QueryConditional queryConditional;
+        boolean isStartDateEmpty = startDate == null || startDate.trim().isEmpty();
+        boolean isEndDateEmpty = endDate == null || endDate.trim().isEmpty();
+
+        if (isStartDateEmpty && isEndDateEmpty) {
+            // Case 1: Both startDate and endDate are empty - find all records for the partition key
+            queryConditional = QueryConditional.keyEqualTo(
+                    Key.builder().partitionValue("Invoices").build()
+            );
+        } else if (isStartDateEmpty) {
+            // Case 2: startDate is empty, endDate is not - find every record BEFORE endDate
+            queryConditional = QueryConditional.sortLessThanOrEqualTo(
+                    Key.builder().partitionValue("Invoices").sortValue(endDate).build()
+            );
+        } else if (isEndDateEmpty) {
+            // Case 3: endDate is empty, startDate is not - find every record AFTER startDate
+            queryConditional = QueryConditional.sortGreaterThanOrEqualTo(
+                    Key.builder().partitionValue("Invoices").sortValue(startDate).build()
+            );
+        } else {
+            // Case 4: Both startDate and endDate are present - find records BETWEEN startDate and endDate
+            queryConditional = QueryConditional.sortBetween(
+                    Key.builder().partitionValue("Invoices").sortValue(startDate).build(), // Lower bound
+                    Key.builder().partitionValue("Invoices").sortValue(endDate).build()   // Upper bound
+            );
+        }
 
         return table.index("pk-created_at-lsi")
                 .query(queryConditional)
@@ -67,7 +77,7 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                 .collect(Collectors.toList());
     }
 
-    public PageResponse<Invoice> findAllInvoices(Integer limit, String encodedNextPageToken) {
+    public DDBPageResponse<Invoice> findAllInvoices(Integer limit, String encodedNextPageToken) {
         // Delegate to the generic pagination utility
         return DynamoDbPaginationUtil.paginate(
                 objectMapper,

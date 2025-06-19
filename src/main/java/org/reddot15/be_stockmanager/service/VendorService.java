@@ -7,7 +7,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.reddot15.be_stockmanager.dto.request.VendorCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.VendorUpdateRequest;
-import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
+import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.dto.response.VendorResponse;
 import org.reddot15.be_stockmanager.entity.Vendor;
 import org.reddot15.be_stockmanager.exception.AppException;
@@ -44,14 +44,14 @@ public class VendorService {
 	}
 
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
-	public PageResponse<VendorResponse> getAll(Integer limit, String nextPageToken) {
+	public DDBPageResponse<VendorResponse> getAll(Integer limit, String nextPageToken) {
 		// Default limit if not provided - This remains as business logic in the service
 		if (limit == null || limit <= 0) {
 			limit = 10;
 		}
 
 		// Delegate the full pagination logic to the repository
-		PageResponse<Vendor> vendorPage = vendorRepository.findAllVendors(limit, nextPageToken);
+		DDBPageResponse<Vendor> vendorPage = vendorRepository.findAllVendors(limit, nextPageToken);
 
 		// Mapping to response DTOs - This remains as presentation logic in the service
 		List<VendorResponse> vendorResponses = vendorPage.getItems().stream()
@@ -59,7 +59,7 @@ public class VendorService {
 				.toList();
 
 		// Return the paginated response with DTOs
-		return PageResponse.<VendorResponse>builder()
+		return DDBPageResponse.<VendorResponse>builder()
 				.items(vendorResponses)
 				.nextPageToken(vendorPage.getNextPageToken()) // Propagate token from repository
 				.hasMore(vendorPage.isHasMore())             // Propagate hasMore from repository
