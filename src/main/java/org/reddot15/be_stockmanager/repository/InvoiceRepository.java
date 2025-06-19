@@ -31,16 +31,6 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
         return save(invoice);
     }
 
-    public Optional<Invoice> findInvoiceById(String invoiceId) {
-        // Find Permission by Partition Key "Permissions" and Sort Key is permissionId
-        return findByPkAndEntityId("Invoices", invoiceId);
-    }
-
-    public void deleteInvoiceById(String invoiceId) {
-        // Delete Invoice by Partition Key "Invoices" and Sort Key is invoiceId
-        deleteByPkAndEntityId("Invoices", invoiceId);
-    }
-
     public List<Invoice> findInvoicesByCreatedAtBetween(String startDate, String endDate) {
         // Initialize variable
         QueryConditional queryConditional;

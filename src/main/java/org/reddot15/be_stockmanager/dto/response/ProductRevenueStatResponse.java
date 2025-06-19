@@ -18,7 +18,7 @@ public class ProductRevenueStatResponse {
 
 	String categoryName;
 
-	Double amount;
+	Integer amount;
 
 	Double totalRevenue;
 }

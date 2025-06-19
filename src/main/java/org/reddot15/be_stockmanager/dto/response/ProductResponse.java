@@ -24,7 +24,7 @@ public class ProductResponse {
 
 	Double salePrice;
 
-	Double amount;
+	Integer amount;
 
 	String earliestExpiry;
 

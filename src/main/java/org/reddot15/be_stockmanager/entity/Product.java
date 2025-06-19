@@ -19,7 +19,7 @@ public class Product extends BaseMasterDataItem {
     String categoryName;
     Double importPrice;
     Double salePrice;
-    Double amount;
+    Integer amount;
     String earliestExpiry;
     Double vat;
 

@@ -31,7 +31,7 @@ public class ProductCreateRequest {
 	Double salePrice;
 
 	@NotNull(message = "Amount is required.")
-	Double amount;
+	Integer amount;
 
 	@NotBlank(message = "Earliest expiry is required.")
 	String earliestExpiry;

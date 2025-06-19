@@ -19,7 +19,7 @@ public class SaleItem {
     String productId;
     String vendorId;
     String categoryName;
-    Double amount;
+    Integer amount;
     Double price;
     Double vat;
 
