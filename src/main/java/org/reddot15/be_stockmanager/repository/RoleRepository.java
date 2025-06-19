@@ -4,7 +4,6 @@ import org.reddot15.be_stockmanager.entity.Role;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository

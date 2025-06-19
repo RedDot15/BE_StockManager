@@ -28,8 +28,6 @@ import java.util.*;
 public class VendorService {
 	VendorRepository vendorRepository;
 	VendorMapper vendorMapper;
-	ObjectMapper objectMapper;
-
 
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
 	public VendorResponse create(VendorCreateRequest request) {

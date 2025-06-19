@@ -17,6 +17,7 @@ import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
+import org.reddot15.be_stockmanager.util.ListPaginationUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -43,46 +45,23 @@ public class RevenueStatService {
             Integer pageNumber,
             Integer pageSize
     ) {
-        // Retrieve invoices within the specified date range using the repository
-        List<Invoice> invoices = invoiceRepository.findInvoicesByCreatedAtBetween(startDate, endDate);
-
-        // Grouping sale items by vendor
-        Map<String, Double> vendorRevenueMap = invoices.stream()
-                .flatMap(invoice -> invoice.getSales() != null ? invoice.getSales().stream() : null)
-                .collect(Collectors.groupingBy( // Group by vendorId
-                        SaleItem::getVendorId,
-                        Collectors.summingDouble(saleItem -> saleItem.getAmount() * saleItem.getPrice()) // Sum (amount * price) for each vendor
-                ));
-
-        // Convert the map to a list of VendorRevenueStat DTOs
-        List<VendorRevenueStatResponse> allStats = vendorRevenueMap.entrySet().stream()
-                .map(entry -> {
-                    // Get entity
+        List<VendorRevenueStatResponse> allStats = getRevenueStats(
+                startDate,
+                endDate,
+                SaleItem::getVendorId,
+                entry -> {
                     Vendor entity = vendorRepository.findVendorById(entry.getKey())
                             .orElseThrow(() -> new AppException(ErrorCode.VENDOR_NOT_FOUND));
-                    // Return
                     return VendorRevenueStatResponse.builder()
                             .id(entity.getEntityId())
                             .name(entity.getName())
                             .totalRevenue(entry.getValue())
                             .build();
-                })
-                .sorted(Comparator.comparing(VendorRevenueStatResponse::getId))
-                .collect(Collectors.toList());
+                },
+                Comparator.comparing(VendorRevenueStatResponse::getId)
+        );
 
-        // Pagination
-        int totalSize = allStats.size();
-        int startIndex = pageNumber * pageSize;
-        int endIndex = Math.min(startIndex + pageSize, totalSize);
-
-        if (startIndex < totalSize) {
-            return new PageResponse<>(
-                    allStats.subList(startIndex, endIndex),
-                    PageRequest.of(pageNumber, pageSize),
-                    totalSize);
-        } else {
-            return PageResponse.empty();
-        }
+        return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
     }
 
     @PreAuthorize("hasAuthority('VIEW_FINANCIAL_STATISTIC')")
@@ -92,26 +71,15 @@ public class RevenueStatService {
             Integer pageNumber,
             Integer pageSize
     ) {
-        // Retrieve invoices within the specified date range using the repository
-        List<Invoice> invoices = invoiceRepository.findInvoicesByCreatedAtBetween(startDate, endDate);
-
-        // Grouping sale items by product
-        Map<String, Double> productRevenueMap = invoices.stream()
-                .flatMap(invoice -> invoice.getSales() != null ? invoice.getSales().stream() : null)
-                .collect(Collectors.groupingBy( // Group by productId
-                        SaleItem::getProductId,
-                        Collectors.summingDouble(saleItem -> saleItem.getAmount() * saleItem.getPrice())
-                ));
-
-        // Convert the map to a list of ProductRevenueStat DTOs
-        List<ProductRevenueStatResponse> allStats = productRevenueMap.entrySet().stream()
-                .map(entry -> {
-                    // Get entity
+        List<ProductRevenueStatResponse> allStats = getRevenueStats(
+                startDate,
+                endDate,
+                SaleItem::getProductId,
+                entry -> {
                     Product productEntity = productRepository.findProductById(entry.getKey())
                             .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
                     Vendor vendorEntity = vendorRepository.findVendorById(productEntity.getVendorId())
                             .orElseThrow(() -> new AppException(ErrorCode.VENDOR_NOT_FOUND));
-                    // Return
                     return ProductRevenueStatResponse.builder()
                             .id(productEntity.getEntityId())
                             .name(productEntity.getName())
@@ -120,22 +88,11 @@ public class RevenueStatService {
                             .amount(productEntity.getAmount())
                             .totalRevenue(entry.getValue())
                             .build();
-                })
-                .collect(Collectors.toList());
+                },
+                Comparator.comparing(ProductRevenueStatResponse::getId) // Assuming ProductRevenueStatResponse also has an ID
+        );
 
-        // Pagination
-        int totalSize = allStats.size();
-        int startIndex = pageNumber * pageSize;
-        int endIndex = Math.min(startIndex + pageSize, totalSize);
-
-        if (startIndex < totalSize) {
-            return new PageResponse<>(
-                    allStats.subList(startIndex, endIndex),
-                    PageRequest.of(pageNumber, pageSize),
-                    totalSize);
-        } else {
-            return PageResponse.empty();
-        }
+        return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
     }
 
     @PreAuthorize("hasAuthority('VIEW_FINANCIAL_STATISTIC')")
@@ -145,38 +102,41 @@ public class RevenueStatService {
             Integer pageNumber,
             Integer pageSize
     ) {
-        // Retrieve invoices within the specified date range using the repository
+        List<CategoryRevenueStatResponse> allStats = getRevenueStats(
+                startDate,
+                endDate,
+                SaleItem::getCategoryName,
+                entry -> CategoryRevenueStatResponse.builder()
+                        .name(entry.getKey())
+                        .totalRevenue(entry.getValue())
+                        .build(),
+                Comparator.comparing(CategoryRevenueStatResponse::getName) // Assuming CategoryRevenueStatResponse is sorted by name
+        );
+
+        return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
+    }
+
+    // Generic method to calculate revenue stats
+    private <T> List<T> getRevenueStats(
+            String startDate,
+            String endDate,
+            Function<SaleItem, String> groupBy,
+            Function<Map.Entry<String, Double>, T> mapper,
+            Comparator<T> comparator) {
+
         List<Invoice> invoices = invoiceRepository.findInvoicesByCreatedAtBetween(startDate, endDate);
 
-        // Grouping sale items by category
-        Map<String, Double> categoryRevenueMap = invoices.stream()
+        Map<String, Double> revenueMap = invoices.stream()
                 .flatMap(invoice -> invoice.getSales() != null ? invoice.getSales().stream() : null)
-                .collect(Collectors.groupingBy( // Group by productId
-                        SaleItem::getCategoryName,
+                .filter(Objects::nonNull) // Filter out null SaleItems if any from the flatMap
+                .collect(Collectors.groupingBy(
+                        groupBy,
                         Collectors.summingDouble(saleItem -> saleItem.getAmount() * saleItem.getPrice())
                 ));
 
-        // Convert the map to a list of CategoryRevenueStat DTOs
-        List<CategoryRevenueStatResponse> allStats = categoryRevenueMap.entrySet().stream()
-                .map(entry -> CategoryRevenueStatResponse.builder()
-                        .name(entry.getKey())
-                        .totalRevenue(entry.getValue())
-                        .build()
-                )
-                .toList();
-
-        // Pagination
-        int totalSize = allStats.size();
-        int startIndex = pageNumber * pageSize;
-        int endIndex = Math.min(startIndex + pageSize, totalSize);
-
-        if (startIndex < totalSize) {
-            return new PageResponse<>(
-                    allStats.subList(startIndex, endIndex),
-                    PageRequest.of(pageNumber, pageSize),
-                    totalSize);
-        } else {
-            return PageResponse.empty();
-        }
+        return revenueMap.entrySet().stream()
+                .map(mapper)
+                .sorted(comparator)
+                .collect(Collectors.toList());
     }
 }

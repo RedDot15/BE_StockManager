@@ -30,7 +30,6 @@ import java.util.Optional;
 public class ProductService {
 	ProductRepository productRepository;
 	ProductMapper productMapper;
-	ObjectMapper objectMapper;
 	VendorRepository vendorRepository;
 
 	@PreAuthorize("hasAuthority('MANAGE_DATA')")
