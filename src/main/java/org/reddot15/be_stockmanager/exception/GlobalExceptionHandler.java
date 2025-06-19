@@ -3,7 +3,6 @@ package org.reddot15.be_stockmanager.exception;
 import jakarta.validation.ConstraintViolation;
 import org.reddot15.be_stockmanager.dto.response.ValidationResponse;
 import org.reddot15.be_stockmanager.helper.ResponseObject;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;

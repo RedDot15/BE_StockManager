@@ -18,13 +18,14 @@ import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
 import org.reddot15.be_stockmanager.util.ListPaginationUtil;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -116,7 +117,7 @@ public class RevenueStatService {
         return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
     }
 
-    // Generic method to calculate revenue stats
+    // Calculate revenue stats
     private <T> List<T> getRevenueStats(
             String startDate,
             String endDate,
