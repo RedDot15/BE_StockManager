@@ -46,7 +46,7 @@ public class ProductService {
 		return productMapper.toResponse(productRepository.saveProduct(entity));
 	}
 
-	@PreAuthorize("hasAuthority('MANAGE_DATA')")
+	@PreAuthorize("hasAuthority('VIEW_DATA')")
 	public DDBPageResponse<ProductResponse> getAll(Integer limit, String nextPageToken) {
 		// Default limit if not provided - This remains in the service as business logic
 		if (limit == null || limit <= 0) {

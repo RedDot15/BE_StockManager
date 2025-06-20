@@ -41,7 +41,7 @@ public class VendorService {
 		return vendorMapper.toResponse(vendorRepository.saveVendor(entity));
 	}
 
-	@PreAuthorize("hasAuthority('MANAGE_DATA')")
+	@PreAuthorize("hasAuthority('VIEW_DATA')")
 	public DDBPageResponse<VendorResponse> getAll(Integer limit, String nextPageToken) {
 		// Default limit if not provided - This remains as business logic in the service
 		if (limit == null || limit <= 0) {

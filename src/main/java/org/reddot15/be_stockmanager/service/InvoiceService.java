@@ -89,7 +89,7 @@ public class InvoiceService {
         return importedInvoices;
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_DATA')")
+    @PreAuthorize("hasAuthority('MANAGE_INVOICES')")
     public DDBPageResponse<InvoiceResponse> getAll(Integer limit, String nextPageToken) {
         // Business logic or defaulting of limit remains here
         if (limit == null || limit <= 0) {
