@@ -36,4 +36,9 @@ public class InvoiceController {
             @RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
         return buildResponse(HttpStatus.OK, "Get invoices successfully.", invoiceService.getAll(limit, nextPageToken));
     }
+
+    @GetMapping(value = "/{invoiceId}")
+    public ResponseEntity<ResponseObject> getById(@PathVariable String invoiceId) {
+        return buildResponse(HttpStatus.OK, "Get products successfully.", invoiceService.getById(invoiceId));
+    }
 }

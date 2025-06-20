@@ -112,6 +112,15 @@ public class InvoiceService {
                 .build();
     }
 
+    @PreAuthorize("hasAuthority('MANAGE_INVOICES')")
+    public InvoiceResponse getById(String invoiceId) {
+        // Get invoice
+        Invoice entity = invoiceRepository.findInvoiceById(invoiceId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVOICE_NOT_FOUND));
+        // Return
+        return invoiceMapper.toResponse(entity);
+    }
+
     private List<SaleItem> parseSaleItemsJson(String salesJsonString) throws JsonProcessingException {
         // Null exception
         if (salesJsonString == null || salesJsonString.trim().isEmpty()) {

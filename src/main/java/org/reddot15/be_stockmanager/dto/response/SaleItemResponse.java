@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -13,16 +11,16 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class InvoiceResponse {
-	String entityId;
+public class SaleItemResponse {
+	String productId;
 
-	String createdAt;
+	String vendorId;
 
-	String updatedAt;
+	String categoryName;
 
-	Double total;
+	Integer amount;
 
-	Double tax;
+	Double price;
 
-	List<SaleItemResponse> sales;
+	Double vat;
 }

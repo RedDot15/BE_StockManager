@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
+import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -12,6 +13,7 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -76,5 +78,10 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                 (ddbQueryLimit, currentExclusiveStartKey) ->
                         findByPk("Invoices", ddbQueryLimit, currentExclusiveStartKey)
         );
+    }
+
+    public Optional<Invoice> findInvoiceById(String invoiceId) {
+        // Find Product by Partition Key "Invoices" and Sort Key is productId
+        return findByPkAndEntityId("Invoices", invoiceId);
     }
 }
