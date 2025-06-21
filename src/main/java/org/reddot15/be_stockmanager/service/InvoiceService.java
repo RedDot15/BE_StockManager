@@ -18,7 +18,7 @@ import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.InvoiceMapper;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
-import org.reddot15.be_stockmanager.util.DateTimeValidator;
+import org.reddot15.be_stockmanager.util.TimeValidator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,8 +42,8 @@ public class InvoiceService {
     ObjectMapper objectMapper;
     InvoiceMapper invoiceMapper;
 
-    @PreAuthorize("hasAuthority('MANAGE_INVOICES')")
-    public List<Invoice> importInvoicesFromCSV(MultipartFile file) {
+    @PreAuthorize("hasAuthority('IMPORT_INVOICES')")
+    public List<InvoiceResponse> importInvoicesFromCSV(MultipartFile file) {
         // File empty exception
         if (file.isEmpty()) {
             throw new AppException(ErrorCode.EMPTY_FILE);
@@ -66,8 +66,8 @@ public class InvoiceService {
                     invoice.setEntityId(UUID.randomUUID().toString());
 
                     // Map CSV columns to Invoice fields
-                    invoice.setCreatedAt(DateTimeValidator.validate(csvRecord.get("created_at")));
-                    invoice.setUpdatedAt(DateTimeValidator.validate(csvRecord.get("updated_at")));
+                    invoice.setCreatedAt(TimeValidator.validateDateTime(csvRecord.get("created_at")));
+                    invoice.setUpdatedAt(TimeValidator.validateDateTime(csvRecord.get("updated_at")));
                     invoice.setTotal(Double.parseDouble(csvRecord.get("total")));
                     invoice.setTax(Double.parseDouble(csvRecord.get("tax")));
 
@@ -86,10 +86,12 @@ public class InvoiceService {
             throw new AppException(ErrorCode.FILE_PARSE_FAILED);
         }
 
-        return importedInvoices;
+        return importedInvoices.stream()
+                .map(invoiceMapper::toResponse)
+                .toList();
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_INVOICES')")
+    @PreAuthorize("hasAuthority('VIEW_INVOICES')")
     public DDBPageResponse<InvoiceResponse> getAll(Integer limit, String nextPageToken) {
         // Business logic or defaulting of limit remains here
         if (limit == null || limit <= 0) {
@@ -100,7 +102,8 @@ public class InvoiceService {
         DDBPageResponse<Invoice> invoicePage = invoiceRepository.findAllInvoices(limit, nextPageToken);
 
         // Map the entities from the repository to DTOs for the API response
-        List<InvoiceResponse> invoiceResponses = invoicePage.getItems().stream()
+        List<InvoiceResponse> invoiceResponses = invoicePage.getItems()
+                .stream()
                 .map(invoiceMapper::toResponse)
                 .toList();
 
@@ -112,7 +115,7 @@ public class InvoiceService {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_INVOICES')")
+    @PreAuthorize("hasAuthority('VIEW_INVOICES')")
     public InvoiceResponse getById(String invoiceId) {
         // Get invoice
         Invoice entity = invoiceRepository.findInvoiceById(invoiceId)

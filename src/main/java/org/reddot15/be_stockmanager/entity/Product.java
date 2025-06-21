@@ -9,6 +9,8 @@ import lombok.experimental.SuperBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 
+import java.util.Objects;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -48,5 +50,17 @@ public class Product extends BaseMasterDataItem {
     @DynamoDbAttribute("earliest_expiry")
     public String getEarliestExpiry() {
         return earliestExpiry;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return Objects.equals(vendorId, product.vendorId) &&
+                Objects.equals(name, product.name) &&
+                Objects.equals(categoryName, product.categoryName) &&
+                Objects.equals(importPrice, product.importPrice) &&
+                Objects.equals(salePrice, product.salePrice) &&
+                Objects.equals(vat, product.vat);
     }
 }

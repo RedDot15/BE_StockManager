@@ -6,11 +6,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
+import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
+import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.helper.ResponseObject;
 import org.reddot15.be_stockmanager.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static org.reddot15.be_stockmanager.helper.ResponseBuilder.buildResponse;
 
@@ -20,6 +25,14 @@ import static org.reddot15.be_stockmanager.helper.ResponseBuilder.buildResponse;
 @RequestMapping("/api/products")
 public class ProductController {
 	ProductService productService;
+
+	@PostMapping(value = "/import")
+	public ResponseEntity<ResponseObject> importProductFromCSV(@RequestParam("file") MultipartFile file) {
+		List<ProductResponse> importedProducts = productService.importProductFromCSV(file);
+		return buildResponse(HttpStatus.OK,
+				"CSV file uploaded and " + importedProducts.size() + " products imported successfully.",
+				importedProducts);
+	}
 
 	@PostMapping(value = "")
 	public ResponseEntity<ResponseObject> create(@Valid @RequestBody ProductCreateRequest request) {

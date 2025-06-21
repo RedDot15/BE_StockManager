@@ -29,7 +29,7 @@ public class VendorService {
 	VendorRepository vendorRepository;
 	VendorMapper vendorMapper;
 
-	@PreAuthorize("hasAuthority('MANAGE_DATA')")
+	@PreAuthorize("hasAuthority('CREATE_VENDOR')")
 	public VendorResponse create(VendorCreateRequest request) {
 		// Duplicate exception
 		Optional<Vendor> optionalVendor = vendorRepository.findVendorById(request.getEntityId());
@@ -41,7 +41,7 @@ public class VendorService {
 		return vendorMapper.toResponse(vendorRepository.saveVendor(entity));
 	}
 
-	@PreAuthorize("hasAuthority('VIEW_DATA')")
+	@PreAuthorize("hasAuthority('VIEW_VENDOR')")
 	public DDBPageResponse<VendorResponse> getAll(Integer limit, String nextPageToken) {
 		// Default limit if not provided - This remains as business logic in the service
 		if (limit == null || limit <= 0) {
@@ -64,7 +64,7 @@ public class VendorService {
 				.build();
 	}
 
-	@PreAuthorize("hasAuthority('MANAGE_DATA')")
+	@PreAuthorize("hasAuthority('UPDATE_VENDOR')")
 	public VendorResponse update(String vendorId, VendorUpdateRequest request) {
 		// Check exists
 		Vendor entity = vendorRepository.findVendorById(vendorId)
@@ -75,7 +75,7 @@ public class VendorService {
 		return vendorMapper.toResponse(vendorRepository.saveVendor(entity));
 	}
 
-	@PreAuthorize("hasAuthority('MANAGE_DATA')")
+	@PreAuthorize("hasAuthority('DELETE_VENDOR')")
 	public String delete(String vendorId) {
 		// Check exists
 		if (vendorRepository.findVendorById(vendorId).isEmpty())

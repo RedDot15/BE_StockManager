@@ -1,27 +1,25 @@
-pk,entity_id,name,vendor_id,category_name,import_price,sale_price,amount,earliest_expiry,vat,email,password,role_ids,permission_ids,created_at,updated_at,total,tax,sales
-Vendors,VEN001,ABC Tech Solutions,,,,,,,,,,,,,,,,
-Vendors,VEN002,Global Gadgets Inc.,,,,,,,,,,,,,,,,
-Vendors,VEN003,Premium Foodstuff Co.,,,,,,,,,,,,,,,,
-Vendors,VEN004,Fashion Trends Ltd.,,,,,,,,,,,,,,,,
-Vendors,VEN005,Home Essentials Store,,,,,,,,,,,,,,,,
-Products,PROD001,Laptop ProX,VEN001,Electronics,1200.0,1500.0,15,2026-03-31,0.1,,,,,,,,,
-Products,PROD002,Smartphone Z2,VEN001,Electronics,800.0,1000.0,20,2026-04-15,0.1,,,,,,,,,
-Products,PROD003,Wireless Mouse,VEN002,Accessories,10.0,18.0,100,2027-01-01,0.08,,,,,,,,,
-Products,PROD004,Gaming Keyboard,VEN002,Accessories,45.0,75.0,30,2026-11-20,0.08,,,,,,,,,
-Products,PROD005,Organic Coffee Beans,VEN003,Groceries,8.5,12.0,200,2025-09-30,0.08,,,,,,,,,
-Products,PROD006,Premium Olive Oil,VEN003,Groceries,15.0,22.0,80,2026-02-28,0.09,,,,,,,,,
-Products,PROD007,Summer Dress,VEN004,Apparel,25.0,45.0,50,2027-05-10,0.1,,,,,,,,,
-Products,PROD008,Running Shoes,VEN004,Apparel,50.0,90.0,40,2027-06-15,0.1,,,,,,,,,
-Products,PROD009,Smart Vacuum Cleaner,VEN005,Home Appliances,300.0,450.0,10,2028-01-01,0.1,,,,,,,,,
-Products,PROD010,Cookware Set,VEN005,Kitchenware,120.0,180.0,15,2028-03-01,0.08,,,,,,,,,
-Users,USER001,,,,,,,,,admin@example.com,$2a$12$bheazl05NzaTx8DXEmkRSeptB40WwbYqgKvDhRcPBDawv0etB1rDm,"[""ROLE001""]",,,,,,
-Users,USER002,,,,,,,,,thao@example.com,$2a$12$vAtNvdsfBuzWc3hg4VkuueTZpNJnkzr8ahKZUxXfJ2GdCplqKIFOe,"[""ROLE002""]",,,,,,
-Users,USER003,,,,,,,,,linh@example.com,$2a$12$cyo.sh4/NXj1uWrUhYZ5S.m2BKalzZKtsmmr2qtgZYSLOLGky5Iwq,"[""ROLE001""]",,,,,,
-Users,USER004,,,,,,,,,duy@example.com,$2a$12$2Hu3Q1ek3hLo1hJ0firzE.Pl4wj38LltitPov/PYs6.mUjV7NFfva,"[""ROLE002""]",,,,,,
-Users,USER005,,,,,,,,,anh@example.com,$2a$12$.8kqKssqm61TrZb053OkreRuNczzjsBKVmHG5MjilGUjs1s7Wd1BW,"[""ROLE002""]",,,,,,
-Roles,ROLE001,ADMIN,,,,,,,,,,,"[""PERM001"",""PERM002"",""PERM003"",""PERM004""]",,,,,
-Roles,ROLE002,STAFF,,,,,,,,,,,"[""PERM002"",""PERM003""]",,,,,
-Permissions,PERM001,MANAGE_DATA,,,,,,,,,,,,,,,,
-Permissions,PERM002,VIEW_DATA,,,,,,,,,,,,,,,,
-Permissions,PERM003,MANAGE_INVOICES,,,,,,,,,,,,,,,,
-Permissions,PERM004,VIEW_FINANCIAL_STATISTIC,,,,,,,,,,,,,,,,
+pk,entity_id,name,email,password,role_ids,permission_ids
+Vendors,VEN001,ABC Tech Solutions
+Vendors,VEN002,Global Gadgets Inc.
+Vendors,VEN003,Premium Foodstuff Co.
+Vendors,VEN004,Fashion Trends Ltd.
+Vendors,VEN005,Home Essentials Store
+Users,USER001,,admin@example.com,$2a$12$bheazl05NzaTx8DXEmkRSeptB40WwbYqgKvDhRcPBDawv0etB1rDm,"[""ROLE001""]"
+Users,USER002,,thao@example.com,$2a$12$vAtNvdsfBuzWc3hg4VkuueTZpNJnkzr8ahKZUxXfJ2GdCplqKIFOe,"[""ROLE002""]"
+Users,USER003,,linh@example.com,$2a$12$cyo.sh4/NXj1uWrUhYZ5S.m2BKalzZKtsmmr2qtgZYSLOLGky5Iwq,"[""ROLE001""]"
+Users,USER004,,duy@example.com,$2a$12$2Hu3Q1ek3hLo1hJ0firzE.Pl4wj38LltitPov/PYs6.mUjV7NFfva,"[""ROLE002""]"
+Users,USER005,,anh@example.com,$2a$12$.8kqKssqm61TrZb053OkreRuNczzjsBKVmHG5MjilGUjs1s7Wd1BW,"[""ROLE002""]"
+Roles,ROLE001,ADMIN,,,,"[""PERM001"",""PERM002"",""PERM003"",""PERM004"",""PERM005"",""PERM006"",""PERM007"",""PERM008"",""PERM009"",""PERM010"",""PERM011"",""PERM012""]"
+Roles,ROLE002,STAFF,,,,"[""PERM002"",""PERM005"",""PERM007"",""PERM010"",""PERM011""]"
+Permissions,PERM001,CREATE_VENDOR
+Permissions,PERM002,VIEW_VENDOR
+Permissions,PERM003,UPDATE_VENDOR
+Permissions,PERM004,DELETE_VENDOR
+Permissions,PERM005,IMPORT_PRODUCT
+Permissions,PERM006,CREATE_PRODUCT
+Permissions,PERM007,VIEW_PRODUCT
+Permissions,PERM008,UPDATE_PRODUCT
+Permissions,PERM009,DELETE_PRODUCT
+Permissions,PERM010,IMPORT_INVOICES
+Permissions,PERM011,VIEW_INVOICES
+Permissions,PERM012,VIEW_FINANCIAL_STATISTIC

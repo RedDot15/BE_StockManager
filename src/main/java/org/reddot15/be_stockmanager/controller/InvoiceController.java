@@ -3,6 +3,7 @@ package org.reddot15.be_stockmanager.controller;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.helper.ResponseObject;
 import org.reddot15.be_stockmanager.service.InvoiceService;
@@ -23,8 +24,8 @@ public class InvoiceController {
     InvoiceService invoiceService;
 
     @PostMapping("")
-    public ResponseEntity<ResponseObject> uploadInvoicesCSV(@RequestParam("file") MultipartFile file) {
-        List<Invoice> importedInvoices = invoiceService.importInvoicesFromCSV(file);
+    public ResponseEntity<ResponseObject> importInvoicesFromCSV(@RequestParam("file") MultipartFile file) {
+        List<InvoiceResponse> importedInvoices = invoiceService.importInvoicesFromCSV(file);
         return buildResponse(HttpStatus.OK,
                 "CSV file uploaded and " + importedInvoices.size() + " invoices imported successfully.",
                 importedInvoices);

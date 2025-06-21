@@ -32,6 +32,7 @@ public enum ErrorCode {
     // Product
     PRODUCT_DUPLICATE(HttpStatus.CONFLICT, 69,"Product already exists."),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, 64,"Product not found."),
+    PRODUCT_MISMATCH(HttpStatus.BAD_REQUEST, 60,"Product mismatch."),
     // Invoice
     INVOICE_NOT_FOUND(HttpStatus.NOT_FOUND, 64,"Invoice not found."),
     // Pagination
