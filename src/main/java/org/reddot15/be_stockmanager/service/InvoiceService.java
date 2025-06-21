@@ -13,11 +13,13 @@ import org.apache.commons.csv.CSVRecord;
 import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
+import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.SaleItem;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.InvoiceMapper;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
+import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.util.TimeValidator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ public class InvoiceService {
     InvoiceRepository invoiceRepository;
     ObjectMapper objectMapper;
     InvoiceMapper invoiceMapper;
+    ProductRepository productRepository;
 
     @PreAuthorize("hasAuthority('IMPORT_INVOICES')")
     public List<InvoiceResponse> importInvoicesFromCSV(MultipartFile file) {
@@ -73,6 +76,12 @@ public class InvoiceService {
 
                     // Handle SaleItems - parse the JSON array from the 'sales' column
                     List<SaleItem> saleItems = parseSaleItemsJson(csvRecord.get("sales"));
+                    // Checking if the sale item exists
+                    saleItems.forEach(saleItem -> {
+                        productRepository.findProductById(saleItem.getProductId())
+                                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+                    });
+                    // Set sale-items into invoice
                     invoice.setSales(saleItems);
 
                     // Save the invoice
