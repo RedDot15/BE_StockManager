@@ -20,6 +20,7 @@ import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.InvoiceMapper;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
+import org.reddot15.be_stockmanager.util.CSVUtil;
 import org.reddot15.be_stockmanager.util.TimeValidator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +43,6 @@ import java.util.UUID;
 @Service
 public class InvoiceService {
     InvoiceRepository invoiceRepository;
-    ObjectMapper objectMapper;
     InvoiceMapper invoiceMapper;
     ProductRepository productRepository;
 
@@ -55,49 +56,38 @@ public class InvoiceService {
         // Initialize result variable
         List<Invoice> importedInvoices = new ArrayList<>();
         // Parse file
-        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), "UTF-8"));
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
              CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
-            // Get records
-            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
-
-            for (CSVRecord csvRecord : csvRecords) {
+            // For each record
+            for (CSVRecord csvRecord : csvParser.getRecords()) {
                 try {
-                    Invoice invoice = new Invoice();
-                    // Set Partition Key
-                    invoice.setPk("Invoices");
-                    // Generate a new UUID for entityId (Sort Key)
-                    invoice.setEntityId(UUID.randomUUID().toString());
-
-                    // Map CSV columns to Invoice fields
-                    invoice.setCreatedAt(TimeValidator.validateDateTime(csvRecord.get("created_at")));
-                    invoice.setUpdatedAt(TimeValidator.validateDateTime(csvRecord.get("updated_at")));
-                    invoice.setTotal(Double.parseDouble(csvRecord.get("total")));
-                    invoice.setTax(Double.parseDouble(csvRecord.get("tax")));
-
-                    // Handle SaleItems - parse the JSON array from the 'sales' column
-                    List<SaleItem> saleItems = parseSaleItemsJson(csvRecord.get("sales"));
-                    // Checking if the sale item exists
-                    saleItems.forEach(saleItem -> {
-                        productRepository.findProductById(saleItem.getProductId())
-                                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-                    });
-                    // Set sale-items into invoice
-                    invoice.setSales(saleItems);
-
+                    // Mapping
+                    Invoice invoice = CSVUtil.mapCsvRecordToInvoice(csvRecord);
+                    // Checking if any sale-item not exists
+                    validateSaleItems(invoice.getSales());
                     // Save the invoice
                     importedInvoices.add(invoiceRepository.saveInvoice(invoice));
                 } catch (IllegalArgumentException | DateTimeParseException | JsonProcessingException e) {
-                    // Invalid record exception
+                    // Log the error for debugging purposes, but rethrow as a controlled exception
+                    log.error("Error processing CSV record: {}", csvRecord.toString(), e);
                     throw new AppException(ErrorCode.INVALID_RECORD);
                 }
             }
         } catch (IOException e) {
+            log.error("Error parsing CSV file: {}", e.getMessage(), e);
             throw new AppException(ErrorCode.FILE_PARSE_FAILED);
         }
 
         return importedInvoices.stream()
                 .map(invoiceMapper::toResponse)
                 .toList();
+    }
+
+    private void validateSaleItems(List<SaleItem> saleItems) {
+        saleItems.forEach(saleItem ->
+                productRepository.findProductById(saleItem.getProductId())
+                        .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND))
+        );
     }
 
     @PreAuthorize("hasAuthority('VIEW_INVOICES')")
@@ -133,12 +123,4 @@ public class InvoiceService {
         return invoiceMapper.toResponse(entity);
     }
 
-    private List<SaleItem> parseSaleItemsJson(String salesJsonString) throws JsonProcessingException {
-        // Null exception
-        if (salesJsonString == null || salesJsonString.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        // Deserialize the JSON string into a List<SaleItem>
-        return objectMapper.readValue(salesJsonString, new TypeReference<List<SaleItem>>() {});
-    }
 }

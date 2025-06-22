@@ -17,6 +17,7 @@ import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.ProductMapper;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
+import org.reddot15.be_stockmanager.util.CSVUtil;
 import org.reddot15.be_stockmanager.util.TimeValidator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,76 +53,16 @@ public class ProductService {
 		// Initialize result variable
 		List<Product> importedProducts = new ArrayList<>();
 		// Parse file
-		try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), "UTF-8"));
+		try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
 			 CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
-			// Get records
-			Iterable<CSVRecord> csvRecords = csvParser.getRecords();
-
-			for (CSVRecord csvRecord : csvRecords) {
+			// For each record
+			for (CSVRecord csvRecord : csvParser.getRecords()) {
 				try {
-					// Get product ID
-					String productId = csvRecord.get("entity_id");
-					// Get product
-					Optional<Product> foundOptionalProduct = productRepository.findProductById(productId);
-
-					// If not exists
-					if (foundOptionalProduct.isEmpty()) {
-						// Initial new product
-						// Map CSV columns to Product fields
-						Product newProduct = Product.builder()
-								.pk("Products")
-								.entityId(csvRecord.get("entity_id"))
-								.vendorId(csvRecord.get("vendor_id"))
-								.name(csvRecord.get("name"))
-								.categoryName(csvRecord.get("category_name"))
-								.importPrice(Double.parseDouble(csvRecord.get("import_price")))
-								.salePrice(Double.parseDouble(csvRecord.get("sale_price")))
-								.amount(Integer.parseInt(csvRecord.get("amount")))
-								.earliestExpiry(TimeValidator.validateDate(csvRecord.get("earliest_expiry")))
-								.vat(Double.parseDouble(csvRecord.get("vat")))
-								.build();
-
-						// Save the product
-						importedProducts.add(productRepository.saveProduct(newProduct));
-						// Continue
-						continue;
-					}
-
-					// Get found product
-					Product foundProduct = foundOptionalProduct.get();
-					// Map imported product from CSV
-					Product importedProduct = Product.builder()
-							.pk("Products")
-							.entityId(csvRecord.get("entity_id"))
-							.vendorId(csvRecord.get("vendor_id"))
-							.name(csvRecord.get("name"))
-							.categoryName(csvRecord.get("category_name"))
-							.importPrice(Double.parseDouble(csvRecord.get("import_price")))
-							.salePrice(Double.parseDouble(csvRecord.get("sale_price")))
-							.amount(Integer.parseInt(csvRecord.get("amount")))
-							.earliestExpiry(TimeValidator.validateDate(csvRecord.get("earliest_expiry")))
-							.vat(Double.parseDouble(csvRecord.get("vat")))
-							.build();
-
-					// Product information mismatch exception
-					if (!foundProduct.equals(importedProduct))
-						throw new AppException(ErrorCode.PRODUCT_MISMATCH);
-
-					// Calculate up product amount
-					Integer newAmount = foundProduct.getAmount() + importedProduct.getAmount();
-					foundProduct.setAmount(newAmount);
-					// Update earliest expiry time
-					if (importedProduct.getEarliestExpiry().compareTo(foundProduct.getEarliestExpiry()) < 0)
-						foundProduct.setEarliestExpiry(importedProduct.getEarliestExpiry());
-
-					// Save the product
-					productRepository.saveProduct(foundProduct);
-					// Add the imported product to response
-					importedProducts.add(importedProduct);
+					// Process Record
+					processCsvRecord(csvRecord, importedProducts);
 				} catch (IllegalArgumentException | DateTimeParseException e) {
 					// Invalid record exception
-					log.error(e.getMessage(), e);
-					log.error("Invalid record: {}", csvRecord.toString());
+					log.error("Invalid record: {}", csvRecord.toString(), e);
 					throw new AppException(ErrorCode.INVALID_RECORD);
 				}
 			}
@@ -131,6 +73,26 @@ public class ProductService {
 		return importedProducts.stream()
 				.map(productMapper::toResponse)
 				.toList();
+	}
+
+	private void processCsvRecord(CSVRecord csvRecord, List<Product> importedProducts) {
+		// Get product ID
+		String productId = csvRecord.get("entity_id");
+		// Get exists product
+		Optional<Product> foundOptionalProduct = productRepository.findProductById(productId);
+		// Map imported product from CSV
+		Product productToSave = CSVUtil.createProductFromCsvRecord(csvRecord);
+
+		// If not exists
+		if (foundOptionalProduct.isEmpty()) {
+			// Add the new product
+			importedProducts.add(productRepository.saveProduct(productToSave));
+		} else {
+			// Update exists product
+			Product existingProduct = foundOptionalProduct.get();
+			productMapper.updateExistingProduct(existingProduct, productToSave);
+			importedProducts.add(productRepository.saveProduct(existingProduct));
+		}
 	}
 
 	@PreAuthorize("hasAuthority('CREATE_PRODUCT')")
