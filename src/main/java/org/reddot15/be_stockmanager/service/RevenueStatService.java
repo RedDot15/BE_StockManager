@@ -59,7 +59,7 @@ public class RevenueStatService {
                             .totalRevenue(entry.getValue())
                             .build();
                 },
-                Comparator.comparing(VendorRevenueStatResponse::getId)
+                Comparator.comparing(VendorRevenueStatResponse::getName)
         );
 
         return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
@@ -90,7 +90,7 @@ public class RevenueStatService {
                             .totalRevenue(entry.getValue())
                             .build();
                 },
-                Comparator.comparing(ProductRevenueStatResponse::getId) // Assuming ProductRevenueStatResponse also has an ID
+                Comparator.comparing(ProductRevenueStatResponse::getName) // Assuming ProductRevenueStatResponse also has an ID
         );
 
         return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
