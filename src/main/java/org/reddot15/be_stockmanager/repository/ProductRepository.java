@@ -35,7 +35,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
                 encodedNextPageToken,
                 // Provide the specific query function for Products
                 (ddbQueryLimit, currentExclusiveStartKey) ->
-                        findByPk("Products", ddbQueryLimit, currentExclusiveStartKey)
+                        findByPk("Products", null, ddbQueryLimit, currentExclusiveStartKey)
         );
     }
 

@@ -35,7 +35,7 @@ public class VendorRepository extends BaseMasterDataRepository<Vendor> {
                 encodedNextPageToken,
                 // Provide the specific query function for Vendors
                 (ddbQueryLimit, currentExclusiveStartKey) ->
-                        findByPk("Vendors", ddbQueryLimit, currentExclusiveStartKey)
+                        findByPk("Vendors", null, ddbQueryLimit, currentExclusiveStartKey)
         );
     }
 

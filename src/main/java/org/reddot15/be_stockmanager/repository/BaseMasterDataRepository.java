@@ -46,7 +46,7 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         table.deleteItem(key);
     }
 
-    public PaginatedResult<T> findByPk(String pkValue, Integer limit, Map<String, AttributeValue> exclusiveStartKey) {
+    public PaginatedResult<T> findByPk(String pkValue, String index, Integer limit, Map<String, AttributeValue> exclusiveStartKey) {
         // Define query condition
         QueryConditional queryConditional = QueryConditional.keyEqualTo(
                 Key.builder().partitionValue(pkValue).build()
@@ -54,7 +54,8 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         // Define request
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
                 .queryConditional(queryConditional)
-                .limit(limit);
+                .limit(limit)
+                .scanIndexForward(false);
         // Assign ExclusiveStartKey if exists
         if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
             requestBuilder.exclusiveStartKey(exclusiveStartKey); // Set the start key for pagination
@@ -62,10 +63,20 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         // Build request
         QueryEnhancedRequest request = requestBuilder.build();
 
-        // Execute the query ONCE to get the iterable of pages
-        SdkIterable<Page<T>> pages = table.query(request);
+        // Dynamically select the target for the query (table or index)
+        SdkIterable<Page<T>> pages;
+        if (index != null && !index.isEmpty()) {
+            pages = table.index(index).query(request);
+        } else {
+            pages = table.query(request);
+        }
 
-        List<T> pageItems = null;
+        return processFirstPage(pages);
+    }
+
+    private PaginatedResult<T> processFirstPage(SdkIterable<Page<T>> pages) {
+        // Initial as empty list
+        List<T> pageItems = Collections.emptyList();
         Map<String, AttributeValue> pageLastEvaluatedKey = null;
 
         // Get the first page
@@ -75,9 +86,6 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             pageItems = firstPage.items();
             // Get the last evaluated key from this page
             pageLastEvaluatedKey = firstPage.lastEvaluatedKey();
-        } else {
-            // Handle case where no items are returned (e.g., partition key not found)
-            pageItems = Collections.emptyList();
         }
 
         return PaginatedResult.<T>builder()
