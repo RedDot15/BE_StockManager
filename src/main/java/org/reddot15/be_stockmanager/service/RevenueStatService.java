@@ -17,7 +17,6 @@ import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
-import org.reddot15.be_stockmanager.util.ListPaginationUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,11 +39,9 @@ public class RevenueStatService {
     ProductRepository productRepository;
 
     @PreAuthorize("hasAuthority('VIEW_FINANCIAL_STATISTIC')")
-    public PageResponse<VendorRevenueStatResponse> getRevenueStatsByVendor(
+    public List<VendorRevenueStatResponse> getRevenueStatsByVendor(
             String startDate,
-            String endDate,
-            Integer pageNumber,
-            Integer pageSize
+            String endDate
     ) {
         List<VendorRevenueStatResponse> allStats = getRevenueStats(
                 startDate,
@@ -62,15 +59,13 @@ public class RevenueStatService {
                 Comparator.comparing(VendorRevenueStatResponse::getName)
         );
 
-        return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
+        return allStats;
     }
 
     @PreAuthorize("hasAuthority('VIEW_FINANCIAL_STATISTIC')")
-    public PageResponse<ProductRevenueStatResponse> getRevenueStatsByProduct(
+    public List<ProductRevenueStatResponse> getRevenueStatsByProduct(
             String startDate,
-            String endDate,
-            Integer pageNumber,
-            Integer pageSize
+            String endDate
     ) {
         List<ProductRevenueStatResponse> allStats = getRevenueStats(
                 startDate,
@@ -93,15 +88,13 @@ public class RevenueStatService {
                 Comparator.comparing(ProductRevenueStatResponse::getName) // Assuming ProductRevenueStatResponse also has an ID
         );
 
-        return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
+        return allStats;
     }
 
     @PreAuthorize("hasAuthority('VIEW_FINANCIAL_STATISTIC')")
-    public PageResponse<CategoryRevenueStatResponse> getRevenueStatsByCategory(
+    public List<CategoryRevenueStatResponse> getRevenueStatsByCategory(
             String startDate,
-            String endDate,
-            Integer pageNumber,
-            Integer pageSize
+            String endDate
     ) {
         List<CategoryRevenueStatResponse> allStats = getRevenueStats(
                 startDate,
@@ -114,7 +107,7 @@ public class RevenueStatService {
                 Comparator.comparing(CategoryRevenueStatResponse::getName) // Assuming CategoryRevenueStatResponse is sorted by name
         );
 
-        return ListPaginationUtil.paginateList(allStats, pageNumber, pageSize);
+        return allStats;
     }
 
     // Calculate revenue stats

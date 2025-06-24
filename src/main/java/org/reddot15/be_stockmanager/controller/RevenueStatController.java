@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 import static org.reddot15.be_stockmanager.helper.ResponseBuilder.buildResponse;
 
 @RequiredArgsConstructor
@@ -28,33 +30,27 @@ public class RevenueStatController {
     @GetMapping("/vendor-revenue")
     public ResponseEntity<ResponseObject> getVendorRevenueStats(
             @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "pageNumber", defaultValue = "0") Integer pageNumber,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
+            @RequestParam(value = "endDate", required = false) String endDate
     ) {
-        PageResponse<VendorRevenueStatResponse> stats = revenueStatService.getRevenueStatsByVendor(startDate, endDate,  pageNumber, pageSize);
+        List<VendorRevenueStatResponse> stats = revenueStatService.getRevenueStatsByVendor(startDate, endDate);
         return buildResponse(HttpStatus.OK, "Get revenue stats by vendor successfully.", stats);
     }
 
     @GetMapping("/product-revenue")
     public ResponseEntity<ResponseObject> getProductRevenueStats(
             @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "pageNumber", defaultValue = "0") Integer pageNumber,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
+            @RequestParam(value = "endDate", required = false) String endDate
     ) {
-        PageResponse<ProductRevenueStatResponse> stats = revenueStatService.getRevenueStatsByProduct(startDate, endDate,  pageNumber, pageSize);
+        List<ProductRevenueStatResponse> stats = revenueStatService.getRevenueStatsByProduct(startDate, endDate);
         return buildResponse(HttpStatus.OK, "Get revenue stats by product successfully.", stats);
     }
 
     @GetMapping("/category-revenue")
     public ResponseEntity<ResponseObject> getCategoryRevenueStats(
             @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "pageNumber", defaultValue = "0") Integer pageNumber,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
+            @RequestParam(value = "endDate", required = false) String endDate
     ) {
-        PageResponse<CategoryRevenueStatResponse> stats = revenueStatService.getRevenueStatsByCategory(startDate, endDate,  pageNumber, pageSize);
+        List<CategoryRevenueStatResponse> stats = revenueStatService.getRevenueStatsByCategory(startDate, endDate);
         return buildResponse(HttpStatus.OK, "Get revenue stats by product successfully.", stats);
     }
 }
