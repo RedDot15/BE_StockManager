@@ -7,6 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
@@ -18,15 +23,13 @@ import org.reddot15.be_stockmanager.mapper.ProductMapper;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
 import org.reddot15.be_stockmanager.util.CSVUtil;
-import org.reddot15.be_stockmanager.util.TimeValidator;
+import org.reddot15.be_stockmanager.util.ExcelUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -118,7 +121,7 @@ public class ProductService {
 		}
 
 		// Delegate the full pagination logic to the repository
-		DDBPageResponse<Product> productPage = productRepository.findAllProducts(keyword, categoryName, limit, nextPageToken);
+		DDBPageResponse<Product> productPage = productRepository.findAllPaginatedProducts(keyword, categoryName, limit, nextPageToken);
 
 		// Mapping to response DTOs - This remains in the service as presentation logic
 		List<ProductResponse> productResponses = productPage.getItems().stream()
@@ -131,6 +134,18 @@ public class ProductService {
 				.nextPageToken(productPage.getNextPageToken())
 				.hasMore(productPage.isHasMore())
 				.build();
+	}
+
+	public ByteArrayInputStream exportProductsToExcel(String keyword, String categoryName) {
+		// Fetch products based on keyword and categoryName
+		List<Product> products = productRepository.findAllProducts(keyword, categoryName);
+
+		try {
+			return ExcelUtil.productsToExcel(products);
+		} catch (IOException e) {
+			log.error("fail to import data to Excel file: " + e.getMessage());
+			throw new AppException(ErrorCode.FILE_EXPORT_FAILED);
+		}
 	}
 
 	@PreAuthorize("hasAuthority('UPDATE_PRODUCT')")

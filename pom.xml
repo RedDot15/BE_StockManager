@@ -33,6 +33,7 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <spring-cloud-aws.version>3.1.1</spring-cloud-aws.version>
         <common-csv.version>1.10.0</common-csv.version>
+        <poi.version>5.2.3</poi.version>
     </properties>
     <dependencies>
         <!-- Spring Core -->
@@ -70,6 +71,16 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
             <version>${common-csv.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>${poi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
         </dependency>
 
         <!-- Dev extensions -->

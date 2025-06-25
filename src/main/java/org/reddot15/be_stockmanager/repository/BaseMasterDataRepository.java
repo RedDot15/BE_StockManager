@@ -1,12 +1,10 @@
 package org.reddot15.be_stockmanager.repository;
 
 import org.reddot15.be_stockmanager.entity.BaseMasterDataItem;
-import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -15,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
 
@@ -77,7 +76,7 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         return processFirstPage(pages);
     }
 
-    public PaginatedResult<T> queryProductByPKAndFilterByKeyword(
+    public PaginatedResult<T> queryPaginatedProductByPKAndFilterByKeyword(
             String index,
             String pkValue,
             String keyword,
@@ -139,4 +138,44 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
                 .lastEvaluatedKey(pageLastEvaluatedKey)
                 .build();
     }
+
+    public List<T> queryAllProductByPKAndFilterByKeyword(
+            String index,
+            String pkValue,
+            String keyword
+    ) {
+        // Define the query condition for the main table partition.
+        QueryConditional queryConditional = QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(pkValue).build()
+        );
+
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(queryConditional);
+
+        // Build a FilterExpression if a keyword is provided.
+        // This filters the results *after* they are read from the partition.
+        if (keyword != null && !keyword.isBlank()) {
+            Expression filterExpression = Expression.builder()
+                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
+                    .putExpressionName("#name", "name")
+                    .putExpressionName("#vendorId", "vendor_id")
+                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
+                    .build();
+            requestBuilder.filterExpression(filterExpression);
+        }
+
+        // Dynamically select the target for the query (table or index)
+        SdkIterable<Page<T>> pages;
+        if (index != null && !index.isEmpty()) {
+            pages = table.index(index).query(requestBuilder.build());
+        } else {
+            pages = table.query(requestBuilder.build());
+        }
+
+        return pages
+                .stream()
+                .flatMap(page -> page.items().stream())
+                .collect(Collectors.toList());
+    }
+
 }

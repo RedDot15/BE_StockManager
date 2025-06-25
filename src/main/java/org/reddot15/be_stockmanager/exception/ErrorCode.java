@@ -41,6 +41,7 @@ public enum ErrorCode {
     // File
     EMPTY_FILE(HttpStatus.BAD_REQUEST, 60, "Empty file."),
     FILE_PARSE_FAILED(HttpStatus.BAD_REQUEST, 60, "File parse failed."),
+    FILE_EXPORT_FAILED(HttpStatus.NOT_FOUND, 64, "Fail to export data to Excel file."),
     // Record
     INVALID_RECORD(HttpStatus.BAD_REQUEST, 60, "Invalid record.")
     ;

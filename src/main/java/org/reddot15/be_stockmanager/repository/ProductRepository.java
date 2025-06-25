@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -31,7 +32,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         return save(product);
     }
 
-    public DDBPageResponse<Product> findAllProducts(String keyword, String categoryName, Integer limit, String encodedNextPageToken) {
+    public DDBPageResponse<Product> findAllPaginatedProducts(String keyword, String categoryName, Integer limit, String encodedNextPageToken) {
         final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
 
         // Choose the correct data-fetching function based on whether a category is present.
@@ -39,12 +40,12 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
 
         if (useGsiQuery) {
             queryFunction = (ddbQueryLimit, startKey) ->
-                    queryProductByPKAndFilterByKeyword(
+                    queryPaginatedProductByPKAndFilterByKeyword(
                             "category_name-gsi", categoryName, keyword, ddbQueryLimit, startKey);
         } else {
             // This path is taken when no category is specified.
             queryFunction = (ddbQueryLimit, startKey) ->
-                    queryProductByPKAndFilterByKeyword(
+                    queryPaginatedProductByPKAndFilterByKeyword(
                             null,"Products", keyword, ddbQueryLimit, startKey);
         }
 
@@ -55,6 +56,23 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
                 encodedNextPageToken,
                 queryFunction
         );
+    }
+
+    public List<Product> findAllProducts(String keyword, String categoryName) {
+        final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
+
+        List<Product> products;
+        if (useGsiQuery) {
+            products = queryAllProductByPKAndFilterByKeyword(
+                    "category_name-gsi", categoryName, keyword);
+        } else {
+            // This path is taken when no category is specified.
+            products = queryAllProductByPKAndFilterByKeyword(
+                    null,"Products", keyword);
+        }
+
+        // Return all products
+        return products;
     }
 
     public Optional<Product> findProductById(String productId) {

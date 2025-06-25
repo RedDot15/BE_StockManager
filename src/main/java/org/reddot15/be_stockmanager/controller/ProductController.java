@@ -10,11 +10,15 @@ import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.helper.ResponseObject;
 import org.reddot15.be_stockmanager.service.ProductService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import static org.reddot15.be_stockmanager.helper.ResponseBuilder.buildResponse;
@@ -46,6 +50,20 @@ public class ProductController {
 			@RequestParam(name = "limit", required = false) Integer limit,
 			@RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
 		return buildResponse(HttpStatus.OK, "Get products successfully.", productService.getAll(keyword, categoryName, limit, nextPageToken));
+	}
+
+	@GetMapping("/download-excel")
+	public ResponseEntity<byte[]> downloadProductsExcel(
+			@RequestParam(name = "keyword", required = false) String keyword,
+			@RequestParam(name = "categoryName", required = false) String categoryName) {
+
+		ByteArrayInputStream bis = productService.exportProductsToExcel(keyword, categoryName);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Content-Disposition", "attachment; filename=products.xlsx");
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+
+		return new ResponseEntity<>(bis.readAllBytes(), headers, HttpStatus.OK);
 	}
 
 	@PutMapping(value = "/{productId}")
