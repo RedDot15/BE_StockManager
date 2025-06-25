@@ -9,6 +9,7 @@ import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.List;
@@ -35,18 +36,29 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
     public DDBPageResponse<Product> findAllPaginatedProducts(String keyword, String categoryName, Integer limit, String encodedNextPageToken) {
         final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
 
+        // Build the filter expression if a keyword is provided.
+        Expression filterExpression;
+        if (keyword != null && !keyword.isBlank()) {
+            filterExpression = Expression.builder()
+                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
+                    .putExpressionName("#name", "name")
+                    .putExpressionName("#vendorId", "vendor_id")
+                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
+                    .build();
+        } else {
+            filterExpression = null;
+        }
+
         // Choose the correct data-fetching function based on whether a category is present.
         BiFunction<Integer, Map<String, AttributeValue>, PaginatedResult<Product>> queryFunction;
 
         if (useGsiQuery) {
             queryFunction = (ddbQueryLimit, startKey) ->
-                    queryPaginatedProductByPKAndFilterByKeyword(
-                            "category_name-gsi", categoryName, keyword, ddbQueryLimit, startKey);
+                    findByPk("category_name-gsi", categoryName, ddbQueryLimit, startKey, filterExpression, false);
         } else {
             // This path is taken when no category is specified.
             queryFunction = (ddbQueryLimit, startKey) ->
-                    queryPaginatedProductByPKAndFilterByKeyword(
-                            null,"Products", keyword, ddbQueryLimit, startKey);
+                    findByPk(null,"Products", ddbQueryLimit, startKey, filterExpression, false);
         }
 
         // Delegate to the generic pagination utility with the chosen function.
@@ -61,14 +73,27 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
     public List<Product> findAllProducts(String keyword, String categoryName) {
         final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
 
+        // Build the filter expression if a keyword is provided.
+        Expression filterExpression;
+        if (keyword != null && !keyword.isBlank()) {
+            filterExpression = Expression.builder()
+                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
+                    .putExpressionName("#name", "name")
+                    .putExpressionName("#vendorId", "vendor_id")
+                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
+                    .build();
+        } else {
+            filterExpression = null;
+        }
+
         List<Product> products;
         if (useGsiQuery) {
-            products = queryAllProductByPKAndFilterByKeyword(
-                    "category_name-gsi", categoryName, keyword);
+            products = findByPk("category_name-gsi", categoryName, null, null, filterExpression, true)
+                    .getItems();
         } else {
             // This path is taken when no category is specified.
-            products = queryAllProductByPKAndFilterByKeyword(
-                    null,"Products", keyword);
+            products = findByPk(null, "Products", null, null, filterExpression, true)
+                    .getItems();
         }
 
         // Return all products

@@ -48,7 +48,9 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             String index,
             String pkValue,
             Integer limit,
-            Map<String, AttributeValue> exclusiveStartKey) {
+            Map<String, AttributeValue> exclusiveStartKey,
+            Expression filterExpression,
+            boolean fetchAllPages) {
         // Define query condition
         QueryConditional queryConditional = QueryConditional.keyEqualTo(
                 Key.builder().partitionValue(pkValue).build()
@@ -56,11 +58,18 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         // Define request
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
                 .queryConditional(queryConditional)
-                .limit(limit)
                 .scanIndexForward(false);
+        // Assign limit if provided
+        if (limit != null && limit > 0) {
+            requestBuilder.limit(limit);
+        }
         // Assign ExclusiveStartKey if exists
         if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
             requestBuilder.exclusiveStartKey(exclusiveStartKey); // Set the start key for pagination
+        }
+        // Apply the filter expression if provided
+        if (filterExpression != null) {
+            requestBuilder.filterExpression(filterExpression);
         }
         // Build request
         QueryEnhancedRequest request = requestBuilder.build();
@@ -73,50 +82,10 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             pages = table.query(request);
         }
 
-        return processFirstPage(pages);
-    }
-
-    public PaginatedResult<T> queryPaginatedProductByPKAndFilterByKeyword(
-            String index,
-            String pkValue,
-            String keyword,
-            Integer limit,
-            Map<String, AttributeValue> exclusiveStartKey
-    ) {
-        // Define the query condition for the main table partition.
-        QueryConditional queryConditional = QueryConditional.keyEqualTo(
-                Key.builder().partitionValue(pkValue).build()
-        );
-
-        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
-                .queryConditional(queryConditional)
-                .limit(limit);
-
-        if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
-            requestBuilder.exclusiveStartKey(exclusiveStartKey);
-        }
-
-        // Build a FilterExpression if a keyword is provided.
-        // This filters the results *after* they are read from the partition.
-        if (keyword != null && !keyword.isBlank()) {
-            Expression filterExpression = Expression.builder()
-                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
-                    .putExpressionName("#name", "name")
-                    .putExpressionName("#vendorId", "vendor_id")
-                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
-                    .build();
-            requestBuilder.filterExpression(filterExpression);
-        }
-
-        // Dynamically select the target for the query (table or index)
-        SdkIterable<Page<T>> pages;
-        if (index != null && !index.isEmpty()) {
-            pages = table.index(index).query(requestBuilder.build());
-        } else {
-            pages = table.query(requestBuilder.build());
-        }
-
-        return processFirstPage(pages);
+        if (!fetchAllPages)
+            return processFirstPage(pages);
+        else
+            return processAllPage(pages);
     }
 
     private PaginatedResult<T> processFirstPage(SdkIterable<Page<T>> pages) {
@@ -139,43 +108,21 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
                 .build();
     }
 
-    public List<T> queryAllProductByPKAndFilterByKeyword(
-            String index,
-            String pkValue,
-            String keyword
-    ) {
-        // Define the query condition for the main table partition.
-        QueryConditional queryConditional = QueryConditional.keyEqualTo(
-                Key.builder().partitionValue(pkValue).build()
-        );
+    private PaginatedResult<T> processAllPage(SdkIterable<Page<T>> pages) {
+        // Initial as empty list
+        List<T> pageItems = Collections.emptyList();
 
-        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
-                .queryConditional(queryConditional);
-
-        // Build a FilterExpression if a keyword is provided.
-        // This filters the results *after* they are read from the partition.
-        if (keyword != null && !keyword.isBlank()) {
-            Expression filterExpression = Expression.builder()
-                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
-                    .putExpressionName("#name", "name")
-                    .putExpressionName("#vendorId", "vendor_id")
-                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
-                    .build();
-            requestBuilder.filterExpression(filterExpression);
-        }
-
-        // Dynamically select the target for the query (table or index)
-        SdkIterable<Page<T>> pages;
-        if (index != null && !index.isEmpty()) {
-            pages = table.index(index).query(requestBuilder.build());
-        } else {
-            pages = table.query(requestBuilder.build());
-        }
-
-        return pages
+        // Get all items
+        if (pages.iterator().hasNext()) {
+            pageItems = pages
                 .stream()
                 .flatMap(page -> page.items().stream())
-                .collect(Collectors.toList());
-    }
+                .toList();
+        }
 
+        return PaginatedResult.<T>builder()
+                .items(pageItems)
+                .lastEvaluatedKey(null)
+                .build();
+    }
 }

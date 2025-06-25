@@ -76,7 +76,7 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                 encodedNextPageToken,
                 // Provide the specific query function for Invoices
                 (ddbQueryLimit, currentExclusiveStartKey) ->
-                        findByPk("pk-created_at-lsi", "Invoices", ddbQueryLimit, currentExclusiveStartKey)
+                        findByPk("pk-created_at-lsi", "Invoices", ddbQueryLimit, currentExclusiveStartKey, null, false)
         );
     }
 
