@@ -50,7 +50,8 @@ def main():
         {"AttributeName": "pk", "AttributeType": "S"},         # General Partition Key
         {"AttributeName": "entity_id", "AttributeType": "S"},  # General Sort Key
         {"AttributeName": "created_at", "AttributeType": "S"}, # For Invoice's LSI
-        {"AttributeName": "email", "AttributeType": "S"}       # For User's LSI
+        {"AttributeName": "email", "AttributeType": "S"},       # For User's LSI
+        {"AttributeName": "category_name", "AttributeType": "S"} # For category_name-gsi
     ]
     master_data_key_schema = [
         {"AttributeName": "pk", "KeyType": "HASH"},
@@ -81,13 +82,29 @@ def main():
         }
     ]
 
+    # Define Global Secondary Index (GSI) for category_name
+    master_data_global_secondary_indexes = [
+        {
+            "IndexName": "category_name-gsi", # GSI name
+            "KeySchema": [
+                {"AttributeName": "category_name", "KeyType": "HASH"},
+            ],
+            "Projection": {"ProjectionType": "ALL"}, # Project all attributes
+            "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+            }
+        }
+    ]
+
     create_table(
         dynamodb,
         master_data_table_name,
         master_data_attribute_definitions,
         master_data_key_schema,
         master_data_provisioned_throughput,
-        local_secondary_indexes=master_data_local_secondary_indexes
+        local_secondary_indexes=master_data_local_secondary_indexes,
+        global_secondary_indexes=master_data_global_secondary_indexes
     )
 
 if __name__ == "__main__":

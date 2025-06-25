@@ -41,9 +41,11 @@ public class ProductController {
 
 	@GetMapping(value = "")
 	public ResponseEntity<ResponseObject> getAll(
+			@RequestParam(name = "keyword", required = false) String keyword,
+			@RequestParam(name = "categoryName", required = false) String categoryName,
 			@RequestParam(name = "limit", required = false) Integer limit,
 			@RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
-		return buildResponse(HttpStatus.OK, "Get products successfully.", productService.getAll(limit, nextPageToken));
+		return buildResponse(HttpStatus.OK, "Get products successfully.", productService.getAll(keyword, categoryName, limit, nextPageToken));
 	}
 
 	@PutMapping(value = "/{productId}")

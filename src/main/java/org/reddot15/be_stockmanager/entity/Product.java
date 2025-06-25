@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
 import java.util.Objects;
 
@@ -32,6 +33,7 @@ public class Product extends BaseMasterDataItem {
         return vendorId;
     }
 
+    @DynamoDbSecondaryPartitionKey(indexNames = "category_name-gsi")
     @DynamoDbAttribute("category_name")
     public String getCategoryName() {
         return categoryName;

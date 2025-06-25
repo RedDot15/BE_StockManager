@@ -111,14 +111,14 @@ public class ProductService {
 	}
 
 	@PreAuthorize("hasAuthority('VIEW_PRODUCT')")
-	public DDBPageResponse<ProductResponse> getAll(Integer limit, String nextPageToken) {
+	public DDBPageResponse<ProductResponse> getAll(String keyword, String categoryName, Integer limit, String nextPageToken) {
 		// Default limit if not provided - This remains in the service as business logic
 		if (limit == null || limit <= 0) {
 			limit = 10;
 		}
 
 		// Delegate the full pagination logic to the repository
-		DDBPageResponse<Product> productPage = productRepository.findAllProducts(limit, nextPageToken);
+		DDBPageResponse<Product> productPage = productRepository.findAllProducts(keyword, categoryName, limit, nextPageToken);
 
 		// Mapping to response DTOs - This remains in the service as presentation logic
 		List<ProductResponse> productResponses = productPage.getItems().stream()

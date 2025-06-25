@@ -5,11 +5,15 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Product;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Repository
@@ -27,15 +31,29 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         return save(product);
     }
 
-    public DDBPageResponse<Product> findAllProducts(Integer limit, String encodedNextPageToken) {
-        // Delegate to the generic pagination utility
+    public DDBPageResponse<Product> findAllProducts(String keyword, String categoryName, Integer limit, String encodedNextPageToken) {
+        final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
+
+        // Choose the correct data-fetching function based on whether a category is present.
+        BiFunction<Integer, Map<String, AttributeValue>, PaginatedResult<Product>> queryFunction;
+
+        if (useGsiQuery) {
+            queryFunction = (ddbQueryLimit, startKey) ->
+                    queryProductByPKAndFilterByKeyword(
+                            "category_name-gsi", categoryName, keyword, ddbQueryLimit, startKey);
+        } else {
+            // This path is taken when no category is specified.
+            queryFunction = (ddbQueryLimit, startKey) ->
+                    queryProductByPKAndFilterByKeyword(
+                            null,"Products", keyword, ddbQueryLimit, startKey);
+        }
+
+        // Delegate to the generic pagination utility with the chosen function.
         return DynamoDbPaginationUtil.paginate(
                 objectMapper,
                 limit,
                 encodedNextPageToken,
-                // Provide the specific query function for Products
-                (ddbQueryLimit, currentExclusiveStartKey) ->
-                        findByPk("Products", null, ddbQueryLimit, currentExclusiveStartKey)
+                queryFunction
         );
     }
 

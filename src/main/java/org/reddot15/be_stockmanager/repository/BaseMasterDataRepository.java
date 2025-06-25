@@ -1,13 +1,12 @@
 package org.reddot15.be_stockmanager.repository;
 
 import org.reddot15.be_stockmanager.entity.BaseMasterDataItem;
+import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -46,7 +45,11 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         table.deleteItem(key);
     }
 
-    public PaginatedResult<T> findByPk(String pkValue, String index, Integer limit, Map<String, AttributeValue> exclusiveStartKey) {
+    public PaginatedResult<T> findByPk(
+            String index,
+            String pkValue,
+            Integer limit,
+            Map<String, AttributeValue> exclusiveStartKey) {
         // Define query condition
         QueryConditional queryConditional = QueryConditional.keyEqualTo(
                 Key.builder().partitionValue(pkValue).build()
@@ -69,6 +72,49 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             pages = table.index(index).query(request);
         } else {
             pages = table.query(request);
+        }
+
+        return processFirstPage(pages);
+    }
+
+    public PaginatedResult<T> queryProductByPKAndFilterByKeyword(
+            String index,
+            String pkValue,
+            String keyword,
+            Integer limit,
+            Map<String, AttributeValue> exclusiveStartKey
+    ) {
+        // Define the query condition for the main table partition.
+        QueryConditional queryConditional = QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(pkValue).build()
+        );
+
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(queryConditional)
+                .limit(limit);
+
+        if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
+            requestBuilder.exclusiveStartKey(exclusiveStartKey);
+        }
+
+        // Build a FilterExpression if a keyword is provided.
+        // This filters the results *after* they are read from the partition.
+        if (keyword != null && !keyword.isBlank()) {
+            Expression filterExpression = Expression.builder()
+                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
+                    .putExpressionName("#name", "name")
+                    .putExpressionName("#vendorId", "vendor_id")
+                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
+                    .build();
+            requestBuilder.filterExpression(filterExpression);
+        }
+
+        // Dynamically select the target for the query (table or index)
+        SdkIterable<Page<T>> pages;
+        if (index != null && !index.isEmpty()) {
+            pages = table.index(index).query(requestBuilder.build());
+        } else {
+            pages = table.query(requestBuilder.build());
         }
 
         return processFirstPage(pages);
