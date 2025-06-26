@@ -71,14 +71,6 @@ def main():
                 {"AttributeName": "created_at", "KeyType": "RANGE"}
             ],
             "Projection": {"ProjectionType": "ALL"} # Project all
-        },
-        {
-            "IndexName": "pk-email-lsi", # LSI name
-            "KeySchema": [
-                {"AttributeName": "pk", "KeyType": "HASH"},
-                {"AttributeName": "email", "KeyType": "RANGE"}
-            ],
-            "Projection": {"ProjectionType": "ALL"} # Project all
         }
     ]
 
@@ -88,6 +80,17 @@ def main():
             "IndexName": "category_name-gsi", # GSI name
             "KeySchema": [
                 {"AttributeName": "category_name", "KeyType": "HASH"},
+            ],
+            "Projection": {"ProjectionType": "ALL"}, # Project all attributes
+            "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+            }
+        },
+        {
+            "IndexName": "email-gsi", # GSI name
+            "KeySchema": [
+                {"AttributeName": "email", "KeyType": "HASH"},
             ],
             "Projection": {"ProjectionType": "ALL"}, # Project all attributes
             "ProvisionedThroughput": {

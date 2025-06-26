@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class User extends BaseMasterDataItem {
     String password;
     List<String> roleIds;
 
-    @DynamoDbSecondarySortKey(indexNames = "pk-email-lsi")
+    @DynamoDbSecondaryPartitionKey(indexNames = "email-gsi")
     public String getEmail() {
         return email;
     }

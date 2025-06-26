@@ -22,12 +22,11 @@ public class UserRepository extends BaseMasterDataRepository<User> {
         // Query LSI
         QueryConditional queryConditional = QueryConditional.keyEqualTo(
                 Key.builder()
-                        .partitionValue("Users")
-                        .sortValue(email)
+                        .partitionValue(email)
                         .build()
         );
 
-        List<User> users = table.index("pk-email-lsi") // Tên của LSI
+        List<User> users = table.index("email-gsi") // Tên của LSI
                 .query(queryConditional)
                 .stream()
                 .flatMap(page -> page.items().stream())
