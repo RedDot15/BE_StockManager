@@ -7,10 +7,12 @@ import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
+import org.reddot15.be_stockmanager.util.QueryConditionalBuilder;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +78,13 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                 encodedNextPageToken,
                 // Provide the specific query function for Invoices
                 (ddbQueryLimit, currentExclusiveStartKey) ->
-                        findByPk("pk-created_at-lsi", "Invoices", ddbQueryLimit, currentExclusiveStartKey, null, false)
+                        findByPk(
+                                "pk-created_at-lsi",
+                                QueryConditional.keyEqualTo(Key.builder().partitionValue("Invoices").build()),
+                                ddbQueryLimit,
+                                currentExclusiveStartKey,
+                                null,
+                                false)
         );
     }
 

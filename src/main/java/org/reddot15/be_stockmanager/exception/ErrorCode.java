@@ -43,7 +43,9 @@ public enum ErrorCode {
     FILE_PARSE_FAILED(HttpStatus.BAD_REQUEST, 60, "File parse failed."),
     FILE_EXPORT_FAILED(HttpStatus.NOT_FOUND, 64, "Fail to export data to Excel file."),
     // Record
-    INVALID_RECORD(HttpStatus.BAD_REQUEST, 60, "Invalid record.")
+    INVALID_RECORD(HttpStatus.BAD_REQUEST, 60, "Invalid record."),
+    //
+    UNSUPPORT_DYNAMODB_TYPE(HttpStatus.BAD_REQUEST, 60, "Unsupported DynamoDB type."),
     ;
 
     HttpStatus httpStatus;

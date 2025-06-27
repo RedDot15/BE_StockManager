@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
 
 import java.util.Objects;
 
@@ -33,7 +34,7 @@ public class Product extends BaseMasterDataItem {
         return vendorId;
     }
 
-    @DynamoDbSecondaryPartitionKey(indexNames = "category_name-gsi")
+    @DynamoDbSecondaryPartitionKey(indexNames = "category_name-sale_price-gsi")
     @DynamoDbAttribute("category_name")
     public String getCategoryName() {
         return categoryName;
@@ -44,6 +45,7 @@ public class Product extends BaseMasterDataItem {
         return importPrice;
     }
 
+    @DynamoDbSecondarySortKey(indexNames = {"category_name-sale_price-gsi", "pk-sale_price-lsi"})
     @DynamoDbAttribute("sale_price")
     public Double getSalePrice() {
         return salePrice;

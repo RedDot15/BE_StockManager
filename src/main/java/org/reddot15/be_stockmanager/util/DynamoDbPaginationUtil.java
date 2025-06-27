@@ -53,13 +53,6 @@ public class DynamoDbPaginationUtil {
         // Encode LastEvaluatedKey for the response token based on the final currentExclusiveStartKey from the loop
         String newNextPageToken = PaginationTokenUtil.encodeLastEvaluatedKey(currentExclusiveStartKey, objectMapper);
 
-        // Check if there are truly more pages using an additional "peek" query
-        if (currentExclusiveStartKey != null &&
-                queryFunction.apply(1, currentExclusiveStartKey).getLastEvaluatedKey() == null) {
-            hasMore = false; // Override hasMore to false if the peek query yields no continuation key
-            newNextPageToken = null; // Clear the next page token if there are no more pages
-        }
-
         // Return the final PageResponse
         return DDBPageResponse.<T>builder()
                 .items(aggregatedItems)

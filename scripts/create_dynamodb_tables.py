@@ -51,19 +51,20 @@ def main():
         {"AttributeName": "entity_id", "AttributeType": "S"},  # General Sort Key
         {"AttributeName": "created_at", "AttributeType": "S"}, # For Invoice's LSI
         {"AttributeName": "email", "AttributeType": "S"},       # For User's LSI
-        {"AttributeName": "category_name", "AttributeType": "S"} # For category_name-gsi
+        {"AttributeName": "category_name", "AttributeType": "S"}, # For category_name-sale_price-gsi Partition Key
+        {"AttributeName": "sale_price", "AttributeType": "N"} # For category_name-sale_price-gsi Sort Key
     ]
     master_data_key_schema = [
         {"AttributeName": "pk", "KeyType": "HASH"},
         {"AttributeName": "entity_id", "KeyType": "RANGE"}
     ]
     master_data_provisioned_throughput = {
-        "ReadCapacityUnits": 5,
-        "WriteCapacityUnits": 5
+        "ReadCapacityUnits": 1000,
+        "WriteCapacityUnits": 500
     }
 
-    # Define Local Secondary Index (LSI) for Invoice
     master_data_local_secondary_indexes = [
+        # Define Local Secondary Index (LSI) for Invoice
         {
             "IndexName": "pk-created_at-lsi", # LSI name
             "KeySchema": [
@@ -71,22 +72,33 @@ def main():
                 {"AttributeName": "created_at", "KeyType": "RANGE"}
             ],
             "Projection": {"ProjectionType": "ALL"} # Project all
+        },
+        # Define Local Secondary Index (LSI) for Product
+        {
+            "IndexName": "pk-sale_price-lsi", # LSI name
+            "KeySchema": [
+                {"AttributeName": "pk", "KeyType": "HASH"},
+                {"AttributeName": "sale_price", "KeyType": "RANGE"}
+            ],
+            "Projection": {"ProjectionType": "ALL"} # Project all
         }
     ]
 
-    # Define Global Secondary Index (GSI) for category_name
     master_data_global_secondary_indexes = [
+        # Define Global Secondary Index (GSI) for Product
         {
-            "IndexName": "category_name-gsi", # GSI name
+            "IndexName": "category_name-sale_price-gsi", # GSI name
             "KeySchema": [
                 {"AttributeName": "category_name", "KeyType": "HASH"},
+                {"AttributeName": "sale_price", "KeyType": "RANGE"},
             ],
             "Projection": {"ProjectionType": "ALL"}, # Project all attributes
             "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
+                "ReadCapacityUnits": 1000,
+                "WriteCapacityUnits": 500
             }
         },
+        # Define Global Secondary Index (GSI) for User
         {
             "IndexName": "email-gsi", # GSI name
             "KeySchema": [
@@ -94,8 +106,8 @@ def main():
             ],
             "Projection": {"ProjectionType": "ALL"}, # Project all attributes
             "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
+                "ReadCapacityUnits": 200,
+                "WriteCapacityUnits": 100
             }
         }
     ]

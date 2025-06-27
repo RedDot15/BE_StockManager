@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.reddot15.be_stockmanager.dto.response.CategoryRevenueStatResponse;
 import org.reddot15.be_stockmanager.dto.response.ProductRevenueStatResponse;
 import org.reddot15.be_stockmanager.dto.response.VendorRevenueStatResponse;
-import org.reddot15.be_stockmanager.dto.response.pagination.PageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.SaleItem;

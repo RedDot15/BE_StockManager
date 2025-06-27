@@ -9,10 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
@@ -46,19 +43,14 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
 
     public PaginatedResult<T> findByPk(
             String index,
-            String pkValue,
+            QueryConditional queryConditional,
             Integer limit,
             Map<String, AttributeValue> exclusiveStartKey,
             Expression filterExpression,
-            boolean fetchAllPages) {
-        // Define query condition
-        QueryConditional queryConditional = QueryConditional.keyEqualTo(
-                Key.builder().partitionValue(pkValue).build()
-        );
+            boolean fetchAllItems) {
         // Define request
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
-                .queryConditional(queryConditional)
-                .scanIndexForward(false);
+                .queryConditional(Objects.requireNonNull(queryConditional));
         // Assign limit if provided
         if (limit != null && limit > 0) {
             requestBuilder.limit(limit);
@@ -82,7 +74,7 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             pages = table.query(request);
         }
 
-        if (!fetchAllPages)
+        if (!fetchAllItems)
             return processFirstPage(pages);
         else
             return processAllPage(pages);

@@ -6,6 +6,7 @@ import org.reddot15.be_stockmanager.exception.ErrorCode;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,7 +50,17 @@ public class PaginationTokenUtil {
         return stringMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> AttributeValue.builder().s(entry.getValue()).build()
+                        entry -> {
+                            String value = entry.getValue();
+                            // Attempt to parse as a number
+                            try {
+                                new BigDecimal(value);
+                                return AttributeValue.builder().n(value).build();
+                            } catch (NumberFormatException e) {
+                                // If it's not a valid number, treat it as a string
+                                return AttributeValue.builder().s(value).build();
+                            }
+                        }
                 ));
     }
 
@@ -58,7 +69,20 @@ public class PaginationTokenUtil {
         return attributeValueMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> entry.getValue().s()
+                        entry -> {
+                            AttributeValue attributeValue = entry.getValue();
+                            if (attributeValue.s() != null) {
+                                return attributeValue.s();
+                            } else if (attributeValue.n() != null) {
+                                // DynamoDB stores numbers as strings, so .n() returns a String
+                                return attributeValue.n();
+                            } else if (attributeValue.bool() != null) {
+                                // Handle boolean as string (e.g., "true" or "false")
+                                return String.valueOf(attributeValue.bool());
+                            }
+                            // Unsupported exception
+                            throw new AppException(ErrorCode.UNSUPPORT_DYNAMODB_TYPE);
+                        }
                 ));
     }
 }

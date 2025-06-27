@@ -8,6 +8,8 @@ import org.reddot15.be_stockmanager.entity.Vendor;
 import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.util.Optional;
 
@@ -35,7 +37,13 @@ public class VendorRepository extends BaseMasterDataRepository<Vendor> {
                 encodedNextPageToken,
                 // Provide the specific query function for Vendors
                 (ddbQueryLimit, currentExclusiveStartKey) ->
-                        findByPk(null, "Vendors", ddbQueryLimit, currentExclusiveStartKey, null, false)
+                        findByPk(
+                                null,
+                                QueryConditional.keyEqualTo(Key.builder().partitionValue("Vendors").build()),
+                                ddbQueryLimit,
+                                currentExclusiveStartKey,
+                                null,
+                                false)
         );
     }
 

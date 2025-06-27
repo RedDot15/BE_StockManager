@@ -114,14 +114,26 @@ public class ProductService {
 	}
 
 	@PreAuthorize("hasAuthority('VIEW_PRODUCT')")
-	public DDBPageResponse<ProductResponse> getAll(String keyword, String categoryName, Integer limit, String nextPageToken) {
+	public DDBPageResponse<ProductResponse> getAll(
+			String keyword,
+			String categoryName,
+			Double minPrice,
+			Double maxPrice,
+			Integer limit,
+			String nextPageToken) {
 		// Default limit if not provided - This remains in the service as business logic
 		if (limit == null || limit <= 0) {
 			limit = 10;
 		}
 
 		// Delegate the full pagination logic to the repository
-		DDBPageResponse<Product> productPage = productRepository.findAllPaginatedProducts(keyword, categoryName, limit, nextPageToken);
+		DDBPageResponse<Product> productPage = productRepository.findAllPaginatedProducts(
+				keyword,
+				categoryName,
+				minPrice,
+				maxPrice,
+				limit,
+				nextPageToken);
 
 		// Mapping to response DTOs - This remains in the service as presentation logic
 		List<ProductResponse> productResponses = productPage.getItems().stream()
@@ -136,9 +148,17 @@ public class ProductService {
 				.build();
 	}
 
-	public ByteArrayInputStream exportProductsToExcel(String keyword, String categoryName) {
+	public ByteArrayInputStream exportProductsToExcel(
+			String keyword,
+			String categoryName,
+			Double minPrice,
+			Double maxPrice) {
 		// Fetch products based on keyword and categoryName
-		List<Product> products = productRepository.findAllProducts(keyword, categoryName);
+		List<Product> products = productRepository.findAllProducts(
+				keyword,
+				categoryName,
+				minPrice,
+				maxPrice);
 
 		try {
 			return ExcelUtil.productsToExcel(products);

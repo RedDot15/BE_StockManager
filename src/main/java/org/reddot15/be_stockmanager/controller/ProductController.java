@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
-import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.helper.ResponseObject;
 import org.reddot15.be_stockmanager.service.ProductService;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import static org.reddot15.be_stockmanager.helper.ResponseBuilder.buildResponse;
@@ -47,17 +45,34 @@ public class ProductController {
 	public ResponseEntity<ResponseObject> getAll(
 			@RequestParam(name = "keyword", required = false) String keyword,
 			@RequestParam(name = "categoryName", required = false) String categoryName,
+			@RequestParam(name = "minPrice", required = false) Double minPrice,
+			@RequestParam(name = "maxPrice", required = false) Double maxPrice,
 			@RequestParam(name = "limit", required = false) Integer limit,
 			@RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
-		return buildResponse(HttpStatus.OK, "Get products successfully.", productService.getAll(keyword, categoryName, limit, nextPageToken));
+		return buildResponse(
+				HttpStatus.OK,
+				"Get products successfully.",
+				productService.getAll(
+						keyword,
+						categoryName,
+						minPrice,
+						maxPrice,
+						limit,
+						nextPageToken));
 	}
 
 	@GetMapping("/download-excel")
 	public ResponseEntity<byte[]> downloadProductsExcel(
 			@RequestParam(name = "keyword", required = false) String keyword,
-			@RequestParam(name = "categoryName", required = false) String categoryName) {
+			@RequestParam(name = "categoryName", required = false) String categoryName,
+			@RequestParam(name = "minPrice", required = false) Double minPrice,
+			@RequestParam(name = "maxPrice", required = false) Double maxPrice) {
 
-		ByteArrayInputStream bis = productService.exportProductsToExcel(keyword, categoryName);
+		ByteArrayInputStream bis = productService.exportProductsToExcel(
+				keyword,
+				categoryName,
+				minPrice,
+				maxPrice);
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Content-Disposition", "attachment; filename=products.xlsx");
