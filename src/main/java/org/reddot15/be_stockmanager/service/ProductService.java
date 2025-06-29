@@ -11,12 +11,15 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Product;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.ProductMapper;
@@ -24,16 +27,23 @@ import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
 import org.reddot15.be_stockmanager.util.CSVUtil;
 import org.reddot15.be_stockmanager.util.ExcelUtil;
+import org.reddot15.be_stockmanager.util.QueryConditionalBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -148,24 +158,117 @@ public class ProductService {
 				.build();
 	}
 
-	public ByteArrayInputStream exportProductsToExcel(
+	public Path exportProductsToExcel(
 			String keyword,
 			String categoryName,
 			Double minPrice,
 			Double maxPrice) {
-		// Fetch products based on keyword and categoryName
-		List<Product> products = productRepository.findAllProducts(
-				keyword,
-				categoryName,
-				minPrice,
-				maxPrice);
+		// --- Database Query Logic (unchanged) ---
+		final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
+		Expression filterExpression = null;
+		if (keyword != null && !keyword.isBlank()) {
+			filterExpression = Expression.builder()
+					.expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
+					.putExpressionName("#name", "name")
+					.putExpressionName("#vendorId", "vendor_id")
+					.putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
+					.build();
+		}
 
+		String index;
+		QueryConditional queryConditional;
+		if (useGsiQuery) {
+			index = "category_name-sale_price-gsi";
+			queryConditional = QueryConditionalBuilder.build(categoryName, minPrice, maxPrice);
+		} else {
+			index = "pk-sale_price-lsi";
+			queryConditional = QueryConditionalBuilder.build("Products", minPrice, maxPrice);
+		}
+
+		String[] COLUMNs = {"ID", "Name", "Vendor ID", "Category", "Import Price", "Sale Price", "Amount", "Earliest Expiry", "VAT"};
+
+		Path tempFile;
 		try {
-			return ExcelUtil.productsToExcel(products);
+			// Create a temporary file on the local disk to write the Excel data to.
+			tempFile = Files.createTempFile("products-export-", ".xlsx");
 		} catch (IOException e) {
-			log.error("fail to import data to Excel file: " + e.getMessage());
+			log.error("Failed to create temporary file for export: " + e.getMessage());
+			throw new AppException(ErrorCode.FILE_CREATION_FAILED); // Assuming a new error code
+		}
+
+		// Use SXSSFWorkbook for streaming large datasets.
+		// The constructor argument is the "window size" - the number of rows kept in memory.
+		// Once the window is full, older rows are flushed to the temporary file on disk.
+		try (SXSSFWorkbook workbook = new SXSSFWorkbook(100);
+			 FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
+
+			SXSSFSheet sheet = workbook.createSheet("Products");
+			// It's good practice to auto-size columns for better readability
+			for (int i = 0; i < COLUMNs.length; i++) {
+				sheet.trackAllColumnsForAutoSizing();
+			}
+
+			// --- Header (unchanged) ---
+			Row headerRow = sheet.createRow(0);
+			for (int col = 0; col < COLUMNs.length; col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(COLUMNs[col]);
+			}
+
+			int rowIdx = 1;
+			Map<String, AttributeValue> exclusiveStartKey = null;
+
+			// --- Paginated Database Read and Streaming Write ---
+			do {
+				// Fetch a chunk of records from DynamoDB
+				PaginatedResult<Product> pageResult = productRepository.findByPk(
+						index,
+						queryConditional,
+						10000, // Fetch a reasonable number of items per chunk
+						exclusiveStartKey,
+						filterExpression);
+
+				List<Product> products = pageResult.getItems();
+
+				// Write this chunk of records to the Excel sheet
+				for (Product product : products) {
+					Row row = sheet.createRow(rowIdx++);
+					row.createCell(0).setCellValue(product.getEntityId());
+					row.createCell(1).setCellValue(product.getName());
+					row.createCell(2).setCellValue(product.getVendorId());
+					row.createCell(3).setCellValue(product.getCategoryName());
+					row.createCell(4).setCellValue(product.getImportPrice());
+					row.createCell(5).setCellValue(product.getSalePrice());
+					row.createCell(6).setCellValue(product.getAmount());
+					row.createCell(7).setCellValue(product.getEarliestExpiry());
+					row.createCell(8).setCellValue(product.getVat());
+				}
+
+				exclusiveStartKey = pageResult.getLastEvaluatedKey();
+
+			} while (exclusiveStartKey != null && !exclusiveStartKey.isEmpty());
+
+			// Auto-size columns after all data is written
+			for (int i = 0; i < COLUMNs.length; i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			// Write the workbook content to the file output stream
+			workbook.write(fos);
+
+		} catch (IOException e) {
+			log.error("Failed to write data to Excel file: " + e.getMessage());
+			// Clean up the created temp file on failure
+			try {
+				Files.deleteIfExists(tempFile);
+			} catch (IOException cleanupException) {
+				log.error("Failed to clean up temporary file: " + tempFile, cleanupException);
+			}
 			throw new AppException(ErrorCode.FILE_EXPORT_FAILED);
 		}
+
+		// Return the path to the completed file
+		return tempFile;
 	}
 
 	@PreAuthorize("hasAuthority('UPDATE_PRODUCT')")

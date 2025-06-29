@@ -83,8 +83,7 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                                 QueryConditional.keyEqualTo(Key.builder().partitionValue("Invoices").build()),
                                 ddbQueryLimit,
                                 currentExclusiveStartKey,
-                                null,
-                                false)
+                                null)
         );
     }
 

@@ -68,8 +68,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
                             QueryConditionalBuilder.build(categoryName, minPrice, maxPrice),
                             ddbQueryLimit,
                             startKey,
-                            filterExpression,
-                            false);
+                            filterExpression);
         } else {
             // This path is taken when no category is specified.
             queryFunction = (ddbQueryLimit, startKey) ->
@@ -78,8 +77,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
                             QueryConditionalBuilder.build("Products", minPrice, maxPrice),
                             ddbQueryLimit,
                             startKey,
-                            filterExpression,
-                            false);
+                            filterExpression);
         }
 
         // Delegate to the generic pagination utility with the chosen function.
@@ -89,52 +87,6 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
                 encodedNextPageToken,
                 queryFunction
         );
-    }
-
-    public List<Product> findAllProducts(
-            String keyword,
-            String categoryName,
-            Double minPrice,
-            Double maxPrice) {
-        final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
-
-        // Build the filter expression if a keyword is provided.
-        Expression filterExpression;
-        if (keyword != null && !keyword.isBlank()) {
-            filterExpression = Expression.builder()
-                    .expression("(contains(#name, :keyword) OR contains(#vendorId, :keyword))")
-                    .putExpressionName("#name", "name")
-                    .putExpressionName("#vendorId", "vendor_id")
-                    .putExpressionValue(":keyword", AttributeValue.builder().s(keyword).build())
-                    .build();
-        } else {
-            filterExpression = null;
-        }
-
-        List<Product> products;
-        if (useGsiQuery) {
-            products = findByPk(
-                    "category_name-sale_price-gsi",
-                    QueryConditionalBuilder.build(categoryName, minPrice, maxPrice),
-                    null,
-                    null,
-                    filterExpression,
-                    true)
-                    .getItems();
-        } else {
-            // This path is taken when no category is specified.
-            products = findByPk(
-                    "pk-sale_price-lsi",
-                    QueryConditionalBuilder.build("Products", minPrice, maxPrice),
-                    null,
-                    null,
-                    filterExpression,
-                    true)
-                    .getItems();
-        }
-
-        // Return all products
-        return products;
     }
 
     public Optional<Product> findProductById(String productId) {

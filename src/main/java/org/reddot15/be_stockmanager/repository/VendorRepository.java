@@ -42,8 +42,7 @@ public class VendorRepository extends BaseMasterDataRepository<Vendor> {
                                 QueryConditional.keyEqualTo(Key.builder().partitionValue("Vendors").build()),
                                 ddbQueryLimit,
                                 currentExclusiveStartKey,
-                                null,
-                                false)
+                                null)
         );
     }
 

@@ -1,0 +1,11 @@
+entity_id,name,vendor_id,category_name,import_price,sale_price,amount,earliest_expiry,vat
+3d3c7c20-5038-49c7-983d-a462ddb61ff3,Laptop ProX,VEN001,Electronics,1200.0,1500.0,15,2026-03-31,0.1
+de48c6d4-26d7-4530-88c5-3b9836a46460,Smartphone Z2,VEN001,Electronics,800.0,1000.0,20,2026-04-15,0.1
+8188b728-1e61-461b-b5e9-2e19fa92727c,Wireless Mouse,VEN002,Accessories,10.0,18.0,100,2027-01-01,0.08
+d38021dc-9cc1-48a1-8500-196e8c241917,Gaming Keyboard,VEN002,Accessories,45.0,75.0,30,2026-11-20,0.08
+25de82d8-d4dc-46f0-a026-f9e72ac0105f,Organic Coffee Beans,VEN003,Groceries,8.5,12.0,200,2025-09-30,0.08
+6ceb7016-dc55-4d04-82ec-6f949e5443b0,Premium Olive Oil,VEN003,Groceries,15.0,22.0,80,2026-02-28,0.09
+4eda04f4-e6ab-41ac-a5a1-a4a099e60f68,Summer Dress,VEN004,Apparel,25.0,45.0,50,2027-05-10,0.1
+8f447ba1-1df2-472f-acca-5522ecf88761,Running Shoes,VEN004,Apparel,50.0,90.0,40,2027-06-15,0.1
+0679206e-f3df-47f2-8f04-89d44668dd35,Smart Vacuum Cleaner,VEN005,Home Appliances,300.0,450.0,10,2028-01-01,0.1
+b6fe66f1-4e5c-49b5-b32f-c73bb3ec8d4e,Cookware Set,VEN005,Kitchenware,120.0,180.0,15,2028-02-01,0.08

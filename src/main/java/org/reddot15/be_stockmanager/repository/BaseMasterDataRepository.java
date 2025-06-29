@@ -46,8 +46,7 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             QueryConditional queryConditional,
             Integer limit,
             Map<String, AttributeValue> exclusiveStartKey,
-            Expression filterExpression,
-            boolean fetchAllItems) {
+            Expression filterExpression) {
         // Define request
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
                 .queryConditional(Objects.requireNonNull(queryConditional));
@@ -74,10 +73,7 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
             pages = table.query(request);
         }
 
-        if (!fetchAllItems)
-            return processFirstPage(pages);
-        else
-            return processAllPage(pages);
+        return processFirstPage(pages);
     }
 
     private PaginatedResult<T> processFirstPage(SdkIterable<Page<T>> pages) {
@@ -97,24 +93,6 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         return PaginatedResult.<T>builder()
                 .items(pageItems)
                 .lastEvaluatedKey(pageLastEvaluatedKey)
-                .build();
-    }
-
-    private PaginatedResult<T> processAllPage(SdkIterable<Page<T>> pages) {
-        // Initial as empty list
-        List<T> pageItems = Collections.emptyList();
-
-        // Get all items
-        if (pages.iterator().hasNext()) {
-            pageItems = pages
-                .stream()
-                .flatMap(page -> page.items().stream())
-                .toList();
-        }
-
-        return PaginatedResult.<T>builder()
-                .items(pageItems)
-                .lastEvaluatedKey(null)
                 .build();
     }
 }
