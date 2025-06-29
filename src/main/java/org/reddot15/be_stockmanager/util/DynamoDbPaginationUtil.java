@@ -56,7 +56,7 @@ public class DynamoDbPaginationUtil {
         // Return the final PageResponse
         return DDBPageResponse.<T>builder()
                 .items(aggregatedItems)
-                .nextPageToken(newNextPageToken)
+                .encodedNextPageToken(newNextPageToken)
                 .hasMore(hasMore)
                 .build();
     }

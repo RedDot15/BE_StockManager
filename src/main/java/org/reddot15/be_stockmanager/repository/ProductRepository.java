@@ -23,11 +23,9 @@ import java.util.function.BiFunction;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Repository
 public class ProductRepository extends BaseMasterDataRepository<Product> {
-    ObjectMapper objectMapper;
 
-    public ProductRepository(DynamoDbEnhancedClient enhancedClient, ObjectMapper objectMapper) {
+    public ProductRepository(DynamoDbEnhancedClient enhancedClient) {
         super(enhancedClient, Product.class);
-        this.objectMapper = objectMapper;
     }
 
     public Product saveProduct(Product product) {
@@ -36,13 +34,13 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         return save(product);
     }
 
-    public DDBPageResponse<Product> findAllPaginatedProducts(
+    public PaginatedResult<Product> findAllPaginatedProducts(
             String keyword,
             String categoryName,
             Double minPrice,
             Double maxPrice,
             Integer limit,
-            String encodedNextPageToken) {
+            Map<String, AttributeValue> nextPageToken) {
         final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
 
         // Build the filter expression if a keyword is provided.
@@ -58,35 +56,22 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
             filterExpression = null;
         }
 
-        // Choose the correct data-fetching function based on whether a category is present.
-        BiFunction<Integer, Map<String, AttributeValue>, PaginatedResult<Product>> queryFunction;
-
+        String index;
+        QueryConditional queryConditional;
         if (useGsiQuery) {
-            queryFunction = (ddbQueryLimit, startKey) ->
-                    findByPk(
-                            "category_name-sale_price-gsi",
-                            QueryConditionalBuilder.build(categoryName, minPrice, maxPrice),
-                            ddbQueryLimit,
-                            startKey,
-                            filterExpression);
+            index = "category_name-sale_price-gsi";
+            queryConditional = QueryConditionalBuilder.build(categoryName, minPrice, maxPrice);
         } else {
-            // This path is taken when no category is specified.
-            queryFunction = (ddbQueryLimit, startKey) ->
-                    findByPk(
-                            "pk-sale_price-lsi",
-                            QueryConditionalBuilder.build("Products", minPrice, maxPrice),
-                            ddbQueryLimit,
-                            startKey,
-                            filterExpression);
+            index = "pk-sale_price-lsi";
+            queryConditional = QueryConditionalBuilder.build("Products", minPrice, maxPrice);
         }
 
-        // Delegate to the generic pagination utility with the chosen function.
-        return DynamoDbPaginationUtil.paginate(
-                objectMapper,
+        return findByPk(
+                index,
+                queryConditional,
                 limit,
-                encodedNextPageToken,
-                queryFunction
-        );
+                nextPageToken,
+                filterExpression);
     }
 
     public Optional<Product> findProductById(String productId) {

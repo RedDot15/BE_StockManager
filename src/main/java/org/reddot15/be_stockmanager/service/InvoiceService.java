@@ -1,8 +1,6 @@
 package org.reddot15.be_stockmanager.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,7 +11,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
-import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.SaleItem;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
@@ -21,7 +18,6 @@ import org.reddot15.be_stockmanager.mapper.InvoiceMapper;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.util.CSVUtil;
-import org.reddot15.be_stockmanager.util.TimeValidator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -109,7 +104,7 @@ public class InvoiceService {
         // Return the paginated response with DTOs
         return DDBPageResponse.<InvoiceResponse>builder()
                 .items(invoiceResponses)
-                .nextPageToken(invoicePage.getNextPageToken()) // Get the token from the repository's result
+                .encodedNextPageToken(invoicePage.getEncodedNextPageToken()) // Get the token from the repository's result
                 .hasMore(invoicePage.isHasMore())             // Get the hasMore flag from the repository's result
                 .build();
     }

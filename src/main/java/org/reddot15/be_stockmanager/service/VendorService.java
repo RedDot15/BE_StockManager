@@ -59,7 +59,7 @@ public class VendorService {
 		// Return the paginated response with DTOs
 		return DDBPageResponse.<VendorResponse>builder()
 				.items(vendorResponses)
-				.nextPageToken(vendorPage.getNextPageToken()) // Propagate token from repository
+				.encodedNextPageToken(vendorPage.getEncodedNextPageToken()) // Propagate token from repository
 				.hasMore(vendorPage.isHasMore())             // Propagate hasMore from repository
 				.build();
 	}

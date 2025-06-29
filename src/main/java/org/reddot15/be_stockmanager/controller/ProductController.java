@@ -53,7 +53,7 @@ public class ProductController {
 			@RequestParam(name = "categoryName", required = false) String categoryName,
 			@RequestParam(name = "minPrice", required = false) Double minPrice,
 			@RequestParam(name = "maxPrice", required = false) Double maxPrice,
-			@RequestParam(name = "limit", required = false) Integer limit,
+			@RequestParam(name = "limit", defaultValue = "10") Integer limit,
 			@RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
 		return buildResponse(
 				HttpStatus.OK,

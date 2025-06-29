@@ -12,7 +12,7 @@ import java.util.List;
 public class DDBPageResponse<T> {
     private List<T> items;
 
-    private String nextPageToken; // Base64 encoded lastEvaluatedKey
+    private String encodedNextPageToken; // Base64 encoded lastEvaluatedKey
 
     private boolean hasMore; // Convenience flag for client
 }
