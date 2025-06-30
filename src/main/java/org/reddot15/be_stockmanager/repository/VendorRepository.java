@@ -27,11 +27,11 @@ public class VendorRepository extends BaseMasterDataRepository<Vendor> {
         return save(vendor);
     }
 
-    public PaginatedResult<Vendor> findVendors(
+    public PaginatedResult<Vendor> findOneVendorsPage(
             Map<String, AttributeValue> nextPageToken,
             Integer limit) {
         // Delegate to the generic pagination utility
-        return findByPk(
+        return findOnePage(
                 null,
                 QueryConditional.keyEqualTo(Key.builder().partitionValue("Vendors").build()),
                 null,

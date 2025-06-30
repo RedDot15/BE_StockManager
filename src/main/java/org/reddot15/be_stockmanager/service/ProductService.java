@@ -83,7 +83,7 @@ public class ProductService {
 		// Get exists product
 		Optional<Product> foundOptionalProduct = productRepository.findProductById(productId);
 		// Map imported product from CSV
-		Product productToSave = CSVUtil.createProductFromCsvRecord(csvRecord);
+		Product productToSave = CSVUtil.toProduct(csvRecord);
 
 		// If not exists
 		if (foundOptionalProduct.isEmpty()) {
@@ -113,7 +113,7 @@ public class ProductService {
 	}
 
 	@PreAuthorize("hasAuthority('VIEW_PRODUCT')")
-	public DDBPageResponse<ProductResponse> getAll(
+	public DDBPageResponse<ProductResponse> getProducts(
 			String keyword,
 			String categoryName,
 			Double minPrice,
@@ -126,7 +126,7 @@ public class ProductService {
 				encodedNextPageToken,
 				limit,
 				(ddbQueryLimit, currentExclusiveStartKey) ->
-						productRepository.findProducts(
+						productRepository.findOneProductsPage(
 								keyword,
 								categoryName,
 								minPrice,
@@ -143,7 +143,7 @@ public class ProductService {
 			Double minPrice,
 			Double maxPrice) throws IOException {
 		// Return the path to the completed file
-		return ExcelUtil.productsToExcel((exclusiveStartKey) -> productRepository.findProducts(
+		return ExcelUtil.productsToExcel((exclusiveStartKey) -> productRepository.findOneProductsPage(
 				keyword,
 				categoryName,
 				minPrice,

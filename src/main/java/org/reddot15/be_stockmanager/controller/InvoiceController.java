@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
-import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.helper.ResponseObject;
 import org.reddot15.be_stockmanager.service.InvoiceService;
 import org.springframework.http.HttpStatus;
@@ -35,7 +34,7 @@ public class InvoiceController {
     public ResponseEntity<ResponseObject> getAll(
             @RequestParam(name = "limit", defaultValue = "10") Integer limit,
             @RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
-        return buildResponse(HttpStatus.OK, "Get invoices successfully.", invoiceService.getAll(limit, nextPageToken));
+        return buildResponse(HttpStatus.OK, "Get invoices successfully.", invoiceService.getInvoices(limit, nextPageToken));
     }
 
     @GetMapping(value = "/{invoiceId}")

@@ -28,7 +28,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         return save(product);
     }
 
-    public PaginatedResult<Product> findProducts(
+    public PaginatedResult<Product> findOneProductsPage(
             String keyword,
             String categoryName,
             Double minPrice,
@@ -37,6 +37,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
             Integer limit) {
         final boolean useGsiQuery = categoryName != null && !categoryName.isBlank();
 
+        // Build index and query condition
         String index;
         QueryConditional queryConditional;
         if (useGsiQuery) {
@@ -61,7 +62,7 @@ public class ProductRepository extends BaseMasterDataRepository<Product> {
         }
 
         // Return
-        return findByPk(
+        return findOnePage(
                 index,
                 queryConditional,
                 filterExpression,

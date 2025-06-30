@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class CSVUtil {
-    public static Product createProductFromCsvRecord(CSVRecord csvRecord) {
+    public static Product toProduct(CSVRecord csvRecord) {
         return Product.builder()
                 .pk("Products")
                 .entityId(csvRecord.get("entity_id"))
@@ -28,20 +28,16 @@ public class CSVUtil {
                 .build();
     }
 
-    public static Invoice mapCsvRecordToInvoice(CSVRecord csvRecord) throws JsonProcessingException {
-        Invoice invoice = new Invoice();
-        // Set Partition Key
-        invoice.setPk("Invoices");
-        // Generate a new UUID for entityId (Sort Key)
-        invoice.setEntityId(UUID.randomUUID().toString());
-        // Map CSV columns to Invoice fields
-        invoice.setCreatedAt(TimeValidator.validateDateTime(csvRecord.get("created_at")));
-        invoice.setUpdatedAt(TimeValidator.validateDateTime(csvRecord.get("updated_at")));
-        invoice.setTotal(Double.parseDouble(csvRecord.get("total")));
-        invoice.setTax(Double.parseDouble(csvRecord.get("tax")));
-        // Handle SaleItems - parse the JSON array
-        invoice.setSales(parseSaleItemsJson(csvRecord.get("sales")));
-        return invoice;
+    public static Invoice toInvoice(CSVRecord csvRecord) throws JsonProcessingException {
+        return Invoice.builder()
+                .pk("Invoices")
+                .entityId(UUID.randomUUID().toString())
+                .createdAt(TimeValidator.validateDateTime(csvRecord.get("created_at")))
+                .updatedAt(TimeValidator.validateDateTime(csvRecord.get("updated_at")))
+                .total(Double.parseDouble(csvRecord.get("total")))
+                .tax(Double.parseDouble(csvRecord.get("tax")))
+                .sales(parseSaleItemsJson(csvRecord.get("sales")))
+                .build();
     }
 
     private static List<SaleItem> parseSaleItemsJson(String salesJsonString) throws JsonProcessingException {

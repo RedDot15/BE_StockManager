@@ -58,7 +58,7 @@ public class ProductController {
 		return buildResponse(
 				HttpStatus.OK,
 				"Get products successfully.",
-				productService.getAll(
+				productService.getProducts(
 						keyword,
 						categoryName,
 						minPrice,

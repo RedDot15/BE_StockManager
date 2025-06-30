@@ -10,7 +10,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
 
@@ -41,7 +40,7 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         table.deleteItem(key);
     }
 
-    public PaginatedResult<T> findByPk(
+    public PaginatedResult<T> findOnePage(
             String index,
             QueryConditional queryConditional,
             Expression filterExpression,

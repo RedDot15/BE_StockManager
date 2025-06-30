@@ -3,17 +3,13 @@ package org.reddot15.be_stockmanager.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
-import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
-import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.reddot15.be_stockmanager.util.QueryConditionalBuilder;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.List;
@@ -35,6 +31,18 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
         return save(invoice);
     }
 
+    public PaginatedResult<Invoice> findOneInvoicesPage(
+            Map<String, AttributeValue> nextPageToken,
+            Integer limit) {
+        // Return
+        return findOnePage(
+                "pk-created_at-lsi",
+                QueryConditional.keyEqualTo(Key.builder().partitionValue("Invoices").build()),
+                null,
+                nextPageToken,
+                limit);
+    }
+
     public List<Invoice> findInvoicesByCreatedAtBetween(String startDate, String endDate) {
         return table.index("pk-created_at-lsi")
                 .query(QueryConditionalBuilder.build("Invoices", startDate, endDate))
@@ -43,17 +51,6 @@ public class InvoiceRepository extends BaseMasterDataRepository<Invoice> {
                 .collect(Collectors.toList());
     }
 
-    public PaginatedResult<Invoice> findAllInvoices(
-            Map<String, AttributeValue> nextPageToken,
-            Integer limit) {
-        // Return
-        return findByPk(
-                "pk-created_at-lsi",
-                QueryConditional.keyEqualTo(Key.builder().partitionValue("Invoices").build()),
-                null,
-                nextPageToken,
-                limit);
-    }
 
     public Optional<Invoice> findInvoiceById(String invoiceId) {
         // Find Product by Partition Key "Invoices" and Sort Key is productId

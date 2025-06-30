@@ -19,7 +19,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -52,7 +51,7 @@ public class VendorService {
 				encodedNextPageToken,
 				limit,
 				(ddbQueryLimit, currentExclusiveStartKey) ->
-						vendorRepository.findVendors(
+						vendorRepository.findOneVendorsPage(
 								currentExclusiveStartKey,
 								ddbQueryLimit),
 				vendorMapper::toResponse
