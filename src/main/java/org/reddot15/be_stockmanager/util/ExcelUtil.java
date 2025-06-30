@@ -3,85 +3,59 @@ package org.reddot15.be_stockmanager.util;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
+import org.springframework.util.StringUtils;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @Slf4j
 public class ExcelUtil {
-    public static Path productsToExcel(
-            Function<Map<String, AttributeValue>, PaginatedResult<Product>> queryFunction
+    public static <T> Path exportToExcel(
+            String fileNamePrefix,
+            List<String> headers,
+            Function<Map<String, AttributeValue>, PaginatedResult<T>> queryFunction,
+            BiConsumer<Row, T> rowMapper
     ) {
-        String[] COLUMNs = {"ID", "Name", "Vendor ID", "Category", "Import Price", "Sale Price", "Amount", "Earliest Expiry", "VAT"};
-
-        Path tempFile;
-        try {
-            // Create a temporary file on the local disk to write the Excel data to.
-            tempFile = Files.createTempFile("products-export-", ".xlsx");
-        } catch (IOException e) {
-            log.error("Failed to create temporary file for export: " + e.getMessage());
-            throw new AppException(ErrorCode.FILE_CREATION_FAILED);
-        }
+        // Create a temporary file on the local disk to write the Excel data to.
+        Path tempFile = createTempFile(fileNamePrefix);
 
         // Use SXSSFWorkbook for streaming large datasets.
-        // The constructor argument is the "window size" - the number of rows kept in memory.
-        // Once the window is full, older rows are flushed to the temporary file on disk.
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100);
              FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
 
-            SXSSFSheet sheet = workbook.createSheet("Products");
+            SXSSFSheet sheet = workbook.createSheet(StringUtils.capitalize(fileNamePrefix));
             // Auto-size columns for better readability
-            for (int i = 0; i < COLUMNs.length; i++) {
-                sheet.trackAllColumnsForAutoSizing();
-            }
+            sheet.trackAllColumnsForAutoSizing();
 
-            // --- Header ---
-            Row headerRow = sheet.createRow(0);
-            for (int col = 0; col < COLUMNs.length; col++) {
-                Cell cell = headerRow.createCell(col);
-                cell.setCellValue(COLUMNs[col]);
-            }
+            // Create and style the header row.
+            createHeaderRow(sheet, headers);
 
-            int rowIdx = 1;
+            int rowIdx = 1; // Start data from the second row.
             Map<String, AttributeValue> exclusiveStartKey = null;
 
-            // --- Paginated Database Read and Streaming Write ---
+            // Paginate through the data source and write to the sheet.
             do {
                 // Fetch a chunk of records from DynamoDB
-                PaginatedResult<Product> pageResult = queryFunction.apply(exclusiveStartKey);
-
-                List<Product> products = pageResult.getItems();
+                PaginatedResult<T> pageResult = queryFunction.apply(exclusiveStartKey);
+                List<T> items = pageResult.getItems();
 
                 // Write this chunk of records to the Excel sheet
-                for (Product product : products) {
+                for (T item : items) {
                     Row row = sheet.createRow(rowIdx++);
-                    row.createCell(0).setCellValue(product.getEntityId());
-                    row.createCell(1).setCellValue(product.getName());
-                    row.createCell(2).setCellValue(product.getVendorId());
-                    row.createCell(3).setCellValue(product.getCategoryName());
-                    row.createCell(4).setCellValue(product.getImportPrice());
-                    row.createCell(5).setCellValue(product.getSalePrice());
-                    row.createCell(6).setCellValue(product.getAmount());
-                    row.createCell(7).setCellValue(product.getEarliestExpiry());
-                    row.createCell(8).setCellValue(product.getVat());
+                    // Use the provided rowMapper to populate the cells.
+                    rowMapper.accept(row, item);
                 }
 
                 exclusiveStartKey = pageResult.getLastEvaluatedKey();
@@ -89,7 +63,7 @@ public class ExcelUtil {
             } while (exclusiveStartKey != null && !exclusiveStartKey.isEmpty());
 
             // Auto-size columns after all data is written
-            for (int i = 0; i < COLUMNs.length; i++) {
+            for (int i = 0; i < headers.size(); i++) {
                 sheet.autoSizeColumn(i);
             }
 
@@ -98,15 +72,40 @@ public class ExcelUtil {
         } catch (IOException e) {
             log.error("Failed to write data to Excel file: " + e.getMessage());
             // Clean up the created temp file on failure
-            try {
-                Files.deleteIfExists(tempFile);
-            } catch (IOException cleanupException) {
-                log.error("Failed to clean up temporary file: " + tempFile, cleanupException);
-            }
+            cleanupTempFile(tempFile);
             throw new AppException(ErrorCode.FILE_EXPORT_FAILED);
         }
 
         // Return
         return tempFile;
+    }
+
+    // Creates the header row in the given sheet.
+    private static void createHeaderRow(SXSSFSheet sheet, List<String> headers) {
+        Row headerRow = sheet.createRow(0);
+        for (int col = 0; col < headers.size(); col++) {
+            Cell cell = headerRow.createCell(col);
+            cell.setCellValue(headers.get(col));
+            // Optionally, add styling to the header here.
+        }
+    }
+
+    // Creates a temporary file for the export.
+    private static Path createTempFile(String prefix) {
+        try {
+            return Files.createTempFile(prefix + "-", ".xlsx");
+        } catch (IOException e) {
+            log.error("Failed to create temporary file for export: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.FILE_CREATION_FAILED);
+        }
+    }
+
+    // Deletes the temporary file in case of an error.
+    private static void cleanupTempFile(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.error("Failed to clean up temporary file: {}", path, e);
+        }
     }
 }

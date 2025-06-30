@@ -8,11 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.ss.usermodel.Row;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Product;
+import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.ProductMapper;
@@ -25,6 +27,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +35,10 @@ import java.nio.file.Path;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -142,14 +148,40 @@ public class ProductService {
 			String categoryName,
 			Double minPrice,
 			Double maxPrice) throws IOException {
-		// Return the path to the completed file
-		return ExcelUtil.productsToExcel((exclusiveStartKey) -> productRepository.findOneProductsPage(
-				keyword,
-				categoryName,
-				minPrice,
-				maxPrice,
-				exclusiveStartKey,
-				10000)); // Fetch a reasonable number of items per chunk
+		// Define the headers for the Product export.
+		List<String> headers = List.of(
+				"ID", "Name", "Vendor ID", "Category", "Import Price",
+				"Sale Price", "Amount", "Earliest Expiry", "VAT"
+		);
+
+		// Define the logic to fetch a page of products.
+		Function<Map<String, AttributeValue>, PaginatedResult<Product>> queryFunction =
+				(exclusiveStartKey) -> productRepository.findOneProductsPage(
+						keyword,
+						categoryName,
+						minPrice,
+						maxPrice,
+						exclusiveStartKey,
+						1000 // A reasonable chunk size for memory management.
+				);
+
+		// Define the logic to map a Product object to an Excel row.
+		BiConsumer<Row, Product> rowMapper = (row, product) -> {
+			row.createCell(0).setCellValue(product.getEntityId());
+			row.createCell(1).setCellValue(product.getName());
+			row.createCell(2).setCellValue(product.getVendorId());
+			row.createCell(3).setCellValue(product.getCategoryName());
+			row.createCell(4).setCellValue(product.getImportPrice());
+			row.createCell(5).setCellValue(product.getSalePrice());
+			row.createCell(6).setCellValue(product.getAmount());
+			if (product.getEarliestExpiry() != null) {
+				row.createCell(7).setCellValue(product.getEarliestExpiry().toString());
+			}
+			row.createCell(8).setCellValue(product.getVat());
+		};
+
+		// Call the generic utility with the product-specific configurations.
+		return ExcelUtil.exportToExcel("products", headers, queryFunction, rowMapper);
 	}
 
 	@PreAuthorize("hasAuthority('UPDATE_PRODUCT')")
