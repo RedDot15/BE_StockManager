@@ -9,13 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class DynamoDbPaginationUtil {
-    public static <T> DDBPageResponse<T> paginate(
+    public static <T, R> DDBPageResponse<R> paginate(
             ObjectMapper objectMapper,
-            Integer limit,
             String encodedNextPageToken,
-            BiFunction<Integer, Map<String, AttributeValue>, PaginatedResult<T>> queryFunction) {
+            Integer limit,
+            BiFunction<Integer, Map<String, AttributeValue>, PaginatedResult<T>> queryFunction,
+            Function<T, R> mapper) {
 
         // Default limit if not provided (defensive check, typically handled by service)
         if (limit == null || limit <= 0) {
@@ -50,12 +52,17 @@ public class DynamoDbPaginationUtil {
             hasMore = currentExclusiveStartKey != null && !currentExclusiveStartKey.isEmpty();
         }
 
+        // Map the aggregated items to the response DTO.
+        List<R> mappedItems = aggregatedItems.stream()
+                .map(mapper)
+                .toList();
+
         // Encode LastEvaluatedKey for the response token based on the final currentExclusiveStartKey from the loop
         String newNextPageToken = PaginationTokenUtil.encodeLastEvaluatedKey(currentExclusiveStartKey, objectMapper);
 
         // Return the final PageResponse
-        return DDBPageResponse.<T>builder()
-                .items(aggregatedItems)
+        return DDBPageResponse.<R>builder()
+                .items(mappedItems)
                 .encodedNextPageToken(newNextPageToken)
                 .hasMore(hasMore)
                 .build();

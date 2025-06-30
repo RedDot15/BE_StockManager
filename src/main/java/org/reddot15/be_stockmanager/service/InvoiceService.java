@@ -1,6 +1,7 @@
 package org.reddot15.be_stockmanager.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -11,6 +12,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Invoice;
+import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.SaleItem;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
@@ -18,6 +20,7 @@ import org.reddot15.be_stockmanager.mapper.InvoiceMapper;
 import org.reddot15.be_stockmanager.repository.InvoiceRepository;
 import org.reddot15.be_stockmanager.repository.ProductRepository;
 import org.reddot15.be_stockmanager.util.CSVUtil;
+import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,7 @@ public class InvoiceService {
     InvoiceRepository invoiceRepository;
     InvoiceMapper invoiceMapper;
     ProductRepository productRepository;
+    ObjectMapper objectMapper;
 
     @PreAuthorize("hasAuthority('IMPORT_INVOICES')")
     public List<InvoiceResponse> importInvoicesFromCSV(MultipartFile file) {
@@ -86,27 +90,18 @@ public class InvoiceService {
     }
 
     @PreAuthorize("hasAuthority('VIEW_INVOICES')")
-    public DDBPageResponse<InvoiceResponse> getAll(Integer limit, String nextPageToken) {
-        // Business logic or defaulting of limit remains here
-        if (limit == null || limit <= 0) {
-            limit = 10;
-        }
-
-        // Get invoices
-        DDBPageResponse<Invoice> invoicePage = invoiceRepository.findAllInvoices(limit, nextPageToken);
-
-        // Map the entities from the repository to DTOs for the API response
-        List<InvoiceResponse> invoiceResponses = invoicePage.getItems()
-                .stream()
-                .map(invoiceMapper::toResponse)
-                .toList();
-
-        // Return the paginated response with DTOs
-        return DDBPageResponse.<InvoiceResponse>builder()
-                .items(invoiceResponses)
-                .encodedNextPageToken(invoicePage.getEncodedNextPageToken()) // Get the token from the repository's result
-                .hasMore(invoicePage.isHasMore())             // Get the hasMore flag from the repository's result
-                .build();
+    public DDBPageResponse<InvoiceResponse> getAll(Integer limit, String encodedNextPageToken) {
+        // Delegate to the generic pagination utility with the chosen function.
+        return DynamoDbPaginationUtil.paginate(
+                objectMapper,
+                encodedNextPageToken,
+                limit,
+                (ddbQueryLimit, currentExclusiveStartKey) ->
+                        invoiceRepository.findAllInvoices(
+                                currentExclusiveStartKey,
+                                ddbQueryLimit),
+                invoiceMapper::toResponse
+        );
     }
 
     @PreAuthorize("hasAuthority('VIEW_INVOICES')")

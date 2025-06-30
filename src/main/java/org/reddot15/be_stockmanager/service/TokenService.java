@@ -41,7 +41,7 @@ public class TokenService {
 	RedisAuthService redisAuthService;
 	UserRepository userRepository;
 	RoleRepository roleRepository;
-	private final PermissionRepository permissionRepository;
+	PermissionRepository permissionRepository;
 
 	@NonFinal
 	@Value("${jwt.signer-key}")

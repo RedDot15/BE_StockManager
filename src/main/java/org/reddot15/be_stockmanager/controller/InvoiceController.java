@@ -33,7 +33,7 @@ public class InvoiceController {
 
     @GetMapping(value = "")
     public ResponseEntity<ResponseObject> getAll(
-            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "limit", defaultValue = "10") Integer limit,
             @RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
         return buildResponse(HttpStatus.OK, "Get invoices successfully.", invoiceService.getAll(limit, nextPageToken));
     }

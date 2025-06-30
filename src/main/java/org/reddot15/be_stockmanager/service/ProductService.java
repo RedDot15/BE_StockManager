@@ -8,16 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.reddot15.be_stockmanager.dto.request.ProductCreateRequest;
 import org.reddot15.be_stockmanager.dto.request.ProductUpdateRequest;
 import org.reddot15.be_stockmanager.dto.response.ProductResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
 import org.reddot15.be_stockmanager.entity.Product;
-import org.reddot15.be_stockmanager.entity.pagination.PaginatedResult;
 import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.ProductMapper;
@@ -30,16 +25,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -128,33 +120,21 @@ public class ProductService {
 			Double maxPrice,
 			Integer limit,
 			String encodedNextPageToken) {
-
 		// Delegate to the generic pagination utility with the chosen function.
-		DDBPageResponse<Product> productPage = DynamoDbPaginationUtil.paginate(
+		return DynamoDbPaginationUtil.paginate(
 				objectMapper,
-				limit,
 				encodedNextPageToken,
+				limit,
 				(ddbQueryLimit, currentExclusiveStartKey) ->
-						productRepository.findAllPaginatedProducts(
+						productRepository.findProducts(
 								keyword,
 								categoryName,
 								minPrice,
 								maxPrice,
-								ddbQueryLimit,
-								currentExclusiveStartKey)
+								currentExclusiveStartKey,
+								ddbQueryLimit),
+				productMapper::toResponse
 		);
-
-		// Mapping to response DTOs - This remains in the service as presentation logic
-		List<ProductResponse> productResponses = productPage.getItems().stream()
-				.map(productMapper::toResponse)
-				.toList();
-
-		// Return the paginated response with DTOs
-		return DDBPageResponse.<ProductResponse>builder()
-				.items(productResponses)
-				.encodedNextPageToken(productPage.getEncodedNextPageToken())
-				.hasMore(productPage.isHasMore())
-				.build();
 	}
 
 	public Path exportProductsToExcel(
@@ -163,13 +143,13 @@ public class ProductService {
 			Double minPrice,
 			Double maxPrice) throws IOException {
 		// Return the path to the completed file
-		return ExcelUtil.productsToExcel((exclusiveStartKey) -> productRepository.findAllPaginatedProducts(
+		return ExcelUtil.productsToExcel((exclusiveStartKey) -> productRepository.findProducts(
 				keyword,
 				categoryName,
 				minPrice,
 				maxPrice,
-				10000, // Fetch a reasonable number of items per chunk
-				exclusiveStartKey));
+				exclusiveStartKey,
+				10000)); // Fetch a reasonable number of items per chunk
 	}
 
 	@PreAuthorize("hasAuthority('UPDATE_PRODUCT')")

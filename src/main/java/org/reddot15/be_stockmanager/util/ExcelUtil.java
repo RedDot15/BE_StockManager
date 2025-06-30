@@ -29,7 +29,7 @@ import java.util.function.Function;
 public class ExcelUtil {
     public static Path productsToExcel(
             Function<Map<String, AttributeValue>, PaginatedResult<Product>> queryFunction
-    ) throws IOException {
+    ) {
         String[] COLUMNs = {"ID", "Name", "Vendor ID", "Category", "Import Price", "Sale Price", "Amount", "Earliest Expiry", "VAT"};
 
         Path tempFile;
@@ -95,7 +95,6 @@ public class ExcelUtil {
 
             // Write the workbook content to the file output stream
             workbook.write(fos);
-
         } catch (IOException e) {
             log.error("Failed to write data to Excel file: " + e.getMessage());
             // Clean up the created temp file on failure
@@ -106,5 +105,8 @@ public class ExcelUtil {
             }
             throw new AppException(ErrorCode.FILE_EXPORT_FAILED);
         }
+
+        // Return
+        return tempFile;
     }
 }

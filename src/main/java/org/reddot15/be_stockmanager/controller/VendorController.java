@@ -27,10 +27,10 @@ public class VendorController {
 	}
 
 	@GetMapping(value = "")
-	public ResponseEntity<ResponseObject> getAll(
-			@RequestParam(name = "limit", required = false) Integer limit,
-			@RequestParam(name = "nextPageToken", required = false) String nextPageToken) {
-		return buildResponse(HttpStatus.OK, "Get vendors successfully.", vendorService.getAll(limit, nextPageToken));
+	public ResponseEntity<ResponseObject> getVendors(
+			@RequestParam(name = "nextPageToken", required = false) String nextPageToken,
+			@RequestParam(name = "limit", required = false) Integer limit) {
+		return buildResponse(HttpStatus.OK, "Get vendors successfully.", vendorService.getVendors(nextPageToken, limit));
 	}
 
 	@PutMapping(value = "/{vendorId}")

@@ -1,5 +1,6 @@
 package org.reddot15.be_stockmanager.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,6 +14,7 @@ import org.reddot15.be_stockmanager.exception.AppException;
 import org.reddot15.be_stockmanager.exception.ErrorCode;
 import org.reddot15.be_stockmanager.mapper.VendorMapper;
 import org.reddot15.be_stockmanager.repository.VendorRepository;
+import org.reddot15.be_stockmanager.util.DynamoDbPaginationUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ import java.util.Optional;
 public class VendorService {
 	VendorRepository vendorRepository;
 	VendorMapper vendorMapper;
+	ObjectMapper objectMapper;
 
 	@PreAuthorize("hasAuthority('CREATE_VENDOR')")
 	public VendorResponse create(VendorCreateRequest request) {
@@ -42,26 +45,18 @@ public class VendorService {
 	}
 
 	@PreAuthorize("hasAuthority('VIEW_VENDOR')")
-	public DDBPageResponse<VendorResponse> getAll(Integer limit, String nextPageToken) {
-		// Default limit if not provided - This remains as business logic in the service
-		if (limit == null || limit <= 0) {
-			limit = 10;
-		}
-
-		// Delegate the full pagination logic to the repository
-		DDBPageResponse<Vendor> vendorPage = vendorRepository.findAllVendors(limit, nextPageToken);
-
-		// Mapping to response DTOs - This remains as presentation logic in the service
-		List<VendorResponse> vendorResponses = vendorPage.getItems().stream()
-				.map(vendorMapper::toResponse)
-				.toList();
-
-		// Return the paginated response with DTOs
-		return DDBPageResponse.<VendorResponse>builder()
-				.items(vendorResponses)
-				.encodedNextPageToken(vendorPage.getEncodedNextPageToken()) // Propagate token from repository
-				.hasMore(vendorPage.isHasMore())             // Propagate hasMore from repository
-				.build();
+	public DDBPageResponse<VendorResponse> getVendors(String encodedNextPageToken, Integer limit) {
+		// Delegate to the generic pagination utility with the chosen function.
+		return DynamoDbPaginationUtil.paginate(
+				objectMapper,
+				encodedNextPageToken,
+				limit,
+				(ddbQueryLimit, currentExclusiveStartKey) ->
+						vendorRepository.findVendors(
+								currentExclusiveStartKey,
+								ddbQueryLimit),
+				vendorMapper::toResponse
+		);
 	}
 
 	@PreAuthorize("hasAuthority('UPDATE_VENDOR')")

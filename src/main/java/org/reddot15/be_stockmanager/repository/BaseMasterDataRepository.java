@@ -44,9 +44,9 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
     public PaginatedResult<T> findByPk(
             String index,
             QueryConditional queryConditional,
-            Integer limit,
+            Expression filterExpression,
             Map<String, AttributeValue> exclusiveStartKey,
-            Expression filterExpression) {
+            Integer limit) {
         // Define request
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
                 .queryConditional(Objects.requireNonNull(queryConditional));
@@ -54,13 +54,13 @@ public abstract class BaseMasterDataRepository<T extends BaseMasterDataItem> {
         if (limit != null && limit > 0) {
             requestBuilder.limit(limit);
         }
-        // Assign ExclusiveStartKey if exists
-        if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
-            requestBuilder.exclusiveStartKey(exclusiveStartKey); // Set the start key for pagination
-        }
         // Apply the filter expression if provided
         if (filterExpression != null) {
             requestBuilder.filterExpression(filterExpression);
+        }
+        // Assign ExclusiveStartKey if exists
+        if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
+            requestBuilder.exclusiveStartKey(exclusiveStartKey); // Set the start key for pagination
         }
         // Build request
         QueryEnhancedRequest request = requestBuilder.build();
