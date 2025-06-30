@@ -53,53 +53,30 @@ public class ProductService {
 
 	@PreAuthorize("hasAuthority('IMPORT_PRODUCT')")
 	public List<ProductResponse> importProductFromCSV(MultipartFile file) {
-		// File empty exception
-		if (file.isEmpty()) {
-			throw new AppException(ErrorCode.EMPTY_FILE);
-		}
-
-		// Initialize result variable
-		List<Product> importedProducts = new ArrayList<>();
-		// Parse file
-		try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-			 CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
-			// For each record
-			for (CSVRecord csvRecord : csvParser.getRecords()) {
-				try {
-					// Process Record
-					processCsvRecord(csvRecord, importedProducts);
-				} catch (IllegalArgumentException | DateTimeParseException e) {
-					// Invalid record exception
-					log.error("Invalid record: {}", csvRecord.toString(), e);
-					throw new AppException(ErrorCode.INVALID_RECORD);
-				}
-			}
-		} catch (IOException e) {
-			throw new AppException(ErrorCode.FILE_PARSE_FAILED);
-		}
+		List<Product> importedProducts = CSVUtil.processCSVFile(file, this::processProductRecord);
 
 		return importedProducts.stream()
 				.map(productMapper::toResponse)
 				.toList();
 	}
 
-	private void processCsvRecord(CSVRecord csvRecord, List<Product> importedProducts) {
+	private Product processProductRecord(CSVRecord csvRecord) {
 		// Get product ID
 		String productId = csvRecord.get("entity_id");
 		// Get exists product
 		Optional<Product> foundOptionalProduct = productRepository.findProductById(productId);
 		// Map imported product from CSV
-		Product productToSave = CSVUtil.toProduct(csvRecord);
+		Product productToSave = productMapper.toProduct(csvRecord);
 
 		// If not exists
 		if (foundOptionalProduct.isEmpty()) {
 			// Add the new product
-			importedProducts.add(productRepository.saveProduct(productToSave));
+			return productRepository.saveProduct(productToSave);
 		} else {
 			// Update exists product
 			Product existingProduct = foundOptionalProduct.get();
 			productMapper.updateExistingProduct(existingProduct, productToSave);
-			importedProducts.add(productRepository.saveProduct(existingProduct));
+			return productRepository.saveProduct(existingProduct);
 		}
 	}
 

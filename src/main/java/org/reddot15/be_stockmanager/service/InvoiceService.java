@@ -6,8 +6,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.reddot15.be_stockmanager.dto.response.InvoiceResponse;
 import org.reddot15.be_stockmanager.dto.response.pagination.DDBPageResponse;
@@ -25,13 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -46,39 +40,27 @@ public class InvoiceService {
 
     @PreAuthorize("hasAuthority('IMPORT_INVOICES')")
     public List<InvoiceResponse> importInvoicesFromCSV(MultipartFile file) {
-        // File empty exception
-        if (file.isEmpty()) {
-            throw new AppException(ErrorCode.EMPTY_FILE);
-        }
+        List<Invoice> importedInvoices = CSVUtil.processCSVFile(file, this::processInvoiceRecord);
 
-        // Initialize result variable
-        List<Invoice> importedInvoices = new ArrayList<>();
-        // Parse file
-        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-             CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
-            // For each record
-            for (CSVRecord csvRecord : csvParser.getRecords()) {
-                try {
-                    // Mapping
-                    Invoice invoice = CSVUtil.toInvoice(csvRecord);
-                    // Checking if any sale-item not exists
-                    validateSaleItems(invoice.getSales());
-                    // Save the invoice
-                    importedInvoices.add(invoiceRepository.saveInvoice(invoice));
-                } catch (IllegalArgumentException | DateTimeParseException | JsonProcessingException e) {
-                    // Log the error for debugging purposes, but rethrow as a controlled exception
-                    log.error("Error processing CSV record: {}", csvRecord.toString(), e);
-                    throw new AppException(ErrorCode.INVALID_RECORD);
-                }
-            }
-        } catch (IOException e) {
-            log.error("Error parsing CSV file: {}", e.getMessage(), e);
-            throw new AppException(ErrorCode.FILE_PARSE_FAILED);
-        }
-
+        // Convert to response DTOs
         return importedInvoices.stream()
                 .map(invoiceMapper::toResponse)
-                .toList();
+                .collect(Collectors.toList());
+    }
+
+    private Invoice processInvoiceRecord(CSVRecord csvRecord) {
+        try {
+            // Mapping
+            Invoice invoice = invoiceMapper.toInvoice(csvRecord);
+            // Checking if any sale-item not exists
+            validateSaleItems(invoice.getSales());
+            // Save the invoice
+            return invoiceRepository.saveInvoice(invoice);
+        } catch (IllegalArgumentException | DateTimeParseException | JsonProcessingException e) {
+            // Log the error and wrap it in a custom, controlled exception.
+            log.error("Error processing CSV record: {}. Details: {}", csvRecord.toString(), e.getMessage());
+            throw new AppException(ErrorCode.INVALID_RECORD);
+        }
     }
 
     private void validateSaleItems(List<SaleItem> saleItems) {

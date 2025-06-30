@@ -3,51 +3,46 @@ package org.reddot15.be_stockmanager.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.reddot15.be_stockmanager.entity.Invoice;
 import org.reddot15.be_stockmanager.entity.Product;
 import org.reddot15.be_stockmanager.entity.SaleItem;
+import org.reddot15.be_stockmanager.exception.AppException;
+import org.reddot15.be_stockmanager.exception.ErrorCode;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Slf4j
 public class CSVUtil {
-    public static Product toProduct(CSVRecord csvRecord) {
-        return Product.builder()
-                .pk("Products")
-                .entityId(csvRecord.get("entity_id"))
-                .vendorId(csvRecord.get("vendor_id"))
-                .name(csvRecord.get("name"))
-                .categoryName(csvRecord.get("category_name"))
-                .importPrice(Double.parseDouble(csvRecord.get("import_price")))
-                .salePrice(Double.parseDouble(csvRecord.get("sale_price")))
-                .amount(Integer.parseInt(csvRecord.get("amount")))
-                .earliestExpiry(TimeValidator.validateDate(csvRecord.get("earliest_expiry")))
-                .vat(Double.parseDouble(csvRecord.get("vat")))
-                .build();
-    }
-
-    public static Invoice toInvoice(CSVRecord csvRecord) throws JsonProcessingException {
-        return Invoice.builder()
-                .pk("Invoices")
-                .entityId(UUID.randomUUID().toString())
-                .createdAt(TimeValidator.validateDateTime(csvRecord.get("created_at")))
-                .updatedAt(TimeValidator.validateDateTime(csvRecord.get("updated_at")))
-                .total(Double.parseDouble(csvRecord.get("total")))
-                .tax(Double.parseDouble(csvRecord.get("tax")))
-                .sales(parseSaleItemsJson(csvRecord.get("sales")))
-                .build();
-    }
-
-    private static List<SaleItem> parseSaleItemsJson(String salesJsonString) throws JsonProcessingException {
-        // Null exception
-        if (salesJsonString == null || salesJsonString.trim().isEmpty()) {
-            return new ArrayList<>();
+    public static <T> List<T> processCSVFile(MultipartFile file, Function<CSVRecord, T> recordProcessor) {
+        // File empty exception
+        if (file.isEmpty()) {
+            throw new AppException(ErrorCode.EMPTY_FILE);
         }
-        // New object mapper
-        ObjectMapper objectMapper = new ObjectMapper();
-        // Deserialize the JSON string into a List<SaleItem>
-        return objectMapper.readValue(salesJsonString, new TypeReference<List<SaleItem>>() {});
+
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
+             CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            // Stream records and apply the provided processor function
+            return csvParser.getRecords().stream()
+                    .map(recordProcessor)
+                    .collect(Collectors.toList());
+
+        } catch (IOException e) {
+            log.error("Error parsing or processing CSV file: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.FILE_PARSE_FAILED);
+        }
     }
 }
